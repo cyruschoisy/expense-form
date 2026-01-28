@@ -1,0 +1,270 @@
+import { useState } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+
+export default function ExpenseReportForm() {
+  const [form, setForm] = useState({
+    name: "",
+    position: "",
+    email: "",
+    date: "",
+    officers: "",
+    signature: "",
+  });
+
+  const [items, setItems] = useState([
+    {
+      description: "",
+      budgetLine: "",
+      amount: "",
+      receipts: []
+    }
+  ]);
+
+  const updateForm = (field, value) =>
+    setForm({ ...form, [field]: value });
+
+  const updateItem = (index, field, value) => {
+    const updated = [...items];
+    updated[index][field] = value;
+    setItems(updated);
+  };
+
+  const addItem = () =>
+    setItems([
+      ...items,
+      { description: "", budgetLine: "", amount: "", receipts: [] }
+  ]);
+
+  const total = items.reduce(
+    (sum, item) => sum + (parseFloat(item.amount) || 0),
+    0
+  );
+
+  const updateReceipts = (index, files) => {
+    const updated = [...items];
+    updated[index].receipts = Array.from(files);
+    setItems(updated);
+  };
+
+  const toBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+    });
+
+const submit = async (e) => {
+  e.preventDefault();
+  const API_URL = "http://localhost:3000/submit";
+
+  const encodedItems = await Promise.all(
+    items.map(async (item) => ({
+      description: item.description,
+      budgetLine: item.budgetLine,
+      amount: item.amount,
+      receipts: await Promise.all(
+        item.receipts.map(async (file) => {
+          const base64 = await toBase64(file);
+          return {
+            name: file.name,
+            type: file.type,
+            data: base64.split(",")[1]
+          };
+        })
+      )
+    }))
+  );
+
+  await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      ...form,
+      items: encodedItems,
+      total
+    })
+  });
+
+  alert("Expense report submitted with receipts ✅");
+};
+
+const officers = [
+  "President",
+  "VP Finance & Administration",
+  "VP External",
+  "VP Internal",
+  "VP Academic",
+  "VP Services",
+  "VP Communications",
+  "VP Social",
+  "VP Philanthropic",
+  "VP Equity",
+  "VP Sustainability",
+  "VP Francophone",
+  "Other"
+];
+
+
+  return (
+    <div className="container p-5">
+      <h2>uOttawa Engineering Students Society Reimbursement Form</h2>
+      <p>To ensure a smooth and efficient process for handling reimbursements at the University of Ottawa's Engineering Student Society (ESS), we have established this Reimbursement Form.</p>
+
+      <p>This form has been designed to facilitate the submission and review of expenses incurred while conducting official business on behalf of ESS. We value your dedication and commitment to our mission, and we want to make sure you are promptly and fairly reimbursed for any authorized expenses you may have incurred.</p>
+
+      <p>Before proceeding with your reimbursement request, please take a moment to carefully read and complete this form in its entirety. Ensure that you provide all necessary details, including accurate expense descriptions, dates, and supporting documentation, to expedite the reimbursement process.</p>
+
+      <p>Our goal is to process your reimbursement request as efficiently as possible, and your cooperation in submitting complete and accurate information will greatly assist in achieving this objective. Please keep in mind the following important guidelines:</p>
+
+      <ul>
+        <li>Expense Eligibility: Only expenses that have been approved are eligible for reimbursement. Be sure to reference our budget to see approved expenses.</li>
+        <li>Timely Submission: All reimbursement requests must be submitted within two weeks of incurring the expense. Late submissions may result in delays in processing.</li>
+        <li>Required Documentation: You are required to provide clear and itemized receipts or supporting documentation for each expense claimed. Without proper documentation, your request may be delayed or denied.</li>
+        <li>Approval Process: Once your reimbursement request is submitted, it will undergo a review and approval process. You will be notified of the status of your request as it progresses.</li>
+      </ul>
+
+      <p>Payment Method: <i>Preferred</i></p>
+      <p class="pb-3">We appreciate your dedication to ESS and your commitment to maintaining the highest standards of financial responsibility. If you have any questions or require assistance while completing this form, please do not hesitate to email <a href="mailto:vpfa@uottawaess.ca">vpfa@uottawaess.ca</a>.</p>
+
+      <hr class="pb-3"></hr>
+
+      <form onSubmit={submit}>
+        <p class="">Non // Name <br></br>
+        <input
+          required
+          value={form.name}
+          onChange={(e) => updateForm("name", e.target.value)}
+        />
+        </p>
+        
+        <p>Email (e-transfer email or phone number) <br></br>
+        <input
+          required
+          value={form.email}
+          onChange={(e) => updateForm("email", e.target.value)}
+        />
+        </p>
+
+        <p>Invoice Date <br></br>
+          <input
+            type="date"
+            required
+            value={form.date}
+            onChange={(e) => updateForm("date", e.target.value)}
+          />
+        </p>
+
+        <p>Officers Responsible for Expense <br></br>
+          <select
+            className="form-control"
+            required
+            value={form.officers}
+            onChange={(e) => updateForm("officers", e.target.value)}
+          >
+            <option value="">Select a Budget</option>
+            {officers.map((officer) => (
+              <option key={officer} value={officer}>
+                {officer}
+              </option>
+            ))}
+          </select>
+        </p>
+
+        <h3 class="pt-5">Expenses</h3>
+
+        {items.map((item, i) => (
+          <div className="border rounded p-3 mb-3" key={i}>
+            <div className="row g-2">
+              <div className="col-md-4">
+                Description <br></br>
+                <input
+                  className="form-control"
+                  required
+                  value={item.description}
+                  onChange={(e) =>
+                    updateItem(i, "description", e.target.value)
+                  }
+                />
+              </div>
+
+              <div className="col-md-3">
+                Budget Line <br></br>
+                <input
+                  className="form-control"
+                  required
+                  value={item.budgetLine}
+                  onChange={(e) =>
+                    updateItem(i, "budgetLine", e.target.value)
+                  }
+                />
+              </div>
+
+              <div className="col-md-2">
+                Amount <br></br>
+                <input
+                  step="0.01"
+                  className="form-control"
+                  required
+                  value={item.amount}
+                  onChange={(e) =>
+                    updateItem(i, "amount", e.target.value)
+                  }
+                />
+              </div>
+
+              <div className="col-md-3">
+                Receipt <br></br>
+                <input
+                  type="file"
+                  className="form-control"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => updateReceipts(i, e.target.files)}
+                />
+              </div>
+            </div>
+
+            {item.receipts.length > 0 && (
+              <small className="text-muted">
+                {item.receipts.length} receipt(s) attached
+              </small>
+            )}
+          </div>
+        ))}
+
+
+        <a class="btn btn-dark my-2" type="button" onClick={addItem}>
+          + Add Expense
+        </a>
+
+        <h3 class="pt-5">Total: ${total.toFixed(2)}</h3>
+
+        <div class="row">
+          <div class="col-md-6">
+            <p>Recipient Signature <br></br>
+            <input
+              placeholder="Type your full name"
+              required
+              value={form.signature}
+              onChange={(e) =>
+                updateForm("signature", e.target.value)
+              }
+            />
+            </p>
+
+            <p>Date of Signature<br></br>
+              <input
+                type="date"
+                required
+                value={form.date}
+                onChange={(e) => updateForm("date", e.target.value)}
+              />
+            </p>
+          </div>
+        </div>
+
+        <a class="btn btn-dark my-2" type="submit">Submit Expense Report</a>
+      </form>
+    </div>
+  );
+}
