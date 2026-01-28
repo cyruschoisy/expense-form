@@ -6,16 +6,21 @@ export default function ExpenseReportForm() {
     name: "",
     position: "",
     email: "",
+    phone: "",
     date: "",
     officers: "",
     signature: "",
   });
+
+  const [budgetConfirmed, setBudgetConfirmed] = useState(false);
+  const [truthConfirmed, setTruthConfirmed] = useState(false);
 
   const [items, setItems] = useState([
     {
       description: "",
       budgetLine: "",
       amount: "",
+      notes: "",
       receipts: []
     }
   ]);
@@ -32,8 +37,13 @@ export default function ExpenseReportForm() {
   const addItem = () =>
     setItems([
       ...items,
-      { description: "", budgetLine: "", amount: "", receipts: [] }
+      { description: "", budgetLine: "", amount: "", notes: "", receipts: [] }
   ]);
+
+  const deleteItem = (index) => {
+    const updated = items.filter((_, i) => i !== index);
+    setItems(updated);
+  };
 
   const total = items.reduce(
     (sum, item) => sum + (parseFloat(item.amount) || 0),
@@ -131,22 +141,35 @@ const officers = [
       <form onSubmit={submit}>
         <p class="">Non // Name <br></br>
         <input
+          className="form-control"
           required
           value={form.name}
           onChange={(e) => updateForm("name", e.target.value)}
         />
         </p>
         
-        <p>Email (e-transfer email or phone number) <br></br>
+        <p>Email<br></br>
         <input
+          className="form-control"
           required
           value={form.email}
           onChange={(e) => updateForm("email", e.target.value)}
         />
         </p>
 
+        <p>Phone Number<br></br>
+        <input
+          className="form-control"
+          type="tel"
+          required
+          value={form.phone}
+          onChange={(e) => updateForm("phone", e.target.value)}
+        />
+        </p>
+
         <p>Invoice Date <br></br>
           <input
+            className="form-control"
             type="date"
             required
             value={form.date}
@@ -154,7 +177,7 @@ const officers = [
           />
         </p>
 
-        <p>Officers Responsible for Expense <br></br>
+        <p>Budget<br></br>
           <select
             className="form-control"
             required
@@ -174,6 +197,7 @@ const officers = [
 
         {items.map((item, i) => (
           <div className="border rounded p-3 mb-3" key={i}>
+            <p><strong>Expense #{i + 1}</strong></p>
             <div className="row g-2">
               <div className="col-md-4">
                 Description <br></br>
@@ -224,10 +248,35 @@ const officers = [
               </div>
             </div>
 
+            <div className="row g-2 mt-2">
+              <div className="col-12">
+                Notes (if applicable)<br></br>
+                <input
+                  className="form-control"
+                  placeholder=""
+                  value={item.notes}
+                  onChange={(e) =>
+                    updateItem(i, "notes", e.target.value)
+                  }
+                />
+              </div>
+            </div>
+
             {item.receipts.length > 0 && (
               <small className="text-muted">
                 {item.receipts.length} receipt(s) attached
               </small>
+            )}
+            {i > 0 && (
+              <div className="text-end">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-danger mt-2"
+                  onClick={() => deleteItem(i)}
+                >
+                  X
+                </button>
+              </div>
             )}
           </div>
         ))}
@@ -237,33 +286,69 @@ const officers = [
           + Add Expense
         </a>
 
-        <h3 class="pt-5">Total: ${total.toFixed(2)}</h3>
+        <div class="py-5 text-center border my-3">
+          <h3 class="">Total: ${total.toFixed(2)}</h3>
+        </div>
+    
+        <div class="col-md-6">
+          <p>Recipient Signature <br></br>
+          <input
+            className="form-control"
+            placeholder="Type your full name"
+            required
+            value={form.signature}
+            onChange={(e) =>
+              updateForm("signature", e.target.value)
+            }
+          />
+          </p>
 
-        <div class="row">
-          <div class="col-md-6">
-            <p>Recipient Signature <br></br>
+          <p>Date of Signature<br></br>
             <input
-              placeholder="Type your full name"
+              className="form-control"
+              type="date"
               required
-              value={form.signature}
-              onChange={(e) =>
-                updateForm("signature", e.target.value)
-              }
+              value={form.date}
+              onChange={(e) => updateForm("date", e.target.value)}
             />
-            </p>
+          </p>
+        </div>
 
-            <p>Date of Signature<br></br>
-              <input
-                type="date"
-                required
-                value={form.date}
-                onChange={(e) => updateForm("date", e.target.value)}
-              />
-            </p>
+        <div class="mb-3">
+          <div class="form-check" style={{ alignItems: "center", display: "flex" }}>
+            <input
+              className="form-check-input me-3"
+              type="checkbox"
+              id="budgetConfirm"
+              checked={budgetConfirmed}
+              onChange={(e) => setBudgetConfirmed(e.target.checked)}
+              required
+            />
+            <label className="form-check-label" htmlFor="budgetConfirm" style={{ marginBottom: 0 }}>
+              <strong>Please confirm the nature of the expense below:</strong> <br></br>Yes, this expense has been budgeted for and is within the budgeted limits according to the latest edition of the 2025-26 budget that has been approved by the Exec Team/BOD.
+            </label>
           </div>
         </div>
 
-        <a class="btn btn-dark my-2" type="submit">Submit Expense Report</a>
+        <div class="mb-3">
+          <div class="form-check" style={{ alignItems: "center", display: "flex" }}>
+            <input
+              className="form-check-input me-3"
+              type="checkbox"
+              id="truthConfirm"
+              checked={truthConfirmed}
+              onChange={(e) => setTruthConfirmed(e.target.checked)}
+              required
+            />
+            <label className="form-check-label" htmlFor="truthConfirm" style={{ marginBottom: 0 }}>
+              <strong>Declaration of Truth:</strong> <br></br>I hereby affirm that the information provided in this submission is true, complete, and accurate to the best of my knowledge.
+            </label>
+          </div>
+        </div>
+
+        <div class="text-center">
+          <a class="btn btn-dark my-2" type="submit" disabled={!budgetConfirmed || !truthConfirmed}>Submit Expense Report</a>
+        </div>
       </form>
     </div>
   );
