@@ -67,36 +67,9 @@ export default function ExpenseReportForm() {
       reader.onerror = reject;
     });
 
-  const generatePDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("Expense Report", 20, 20);
-    doc.setFontSize(12);
-    doc.text(`Name: ${form.name}`, 20, 40);
-    doc.text(`Position: ${form.officers}`, 20, 50);
-    doc.text(`Email: ${form.email}`, 20, 60);
-    doc.text(`Phone: ${form.phone}`, 20, 70);
-    doc.text(`Date: ${form.date}`, 20, 80);
-    doc.text(`Signature: ${form.signature}`, 20, 90);
-    doc.text(`Signature Date: ${form.signatureDate}`, 20, 100);
-    doc.text("Expenses:", 20, 120);
-    let y = 130;
-    items.forEach((item, index) => {
-      doc.text(`${index + 1}. Description: ${item.description}`, 20, y);
-      y += 10;
-      doc.text(`   Budget Line: ${item.budgetLine}`, 20, y);
-      y += 10;
-      doc.text(`   Amount: ${item.amount}`, 20, y);
-      y += 10;
-      doc.text(`   Notes: ${item.notes}`, 20, y);
-      y += 10;
-    });
-    doc.text(`Total: ${total}`, 20, y + 10);
-    return doc.output('datauristring').split(',')[1]; // base64
-  };
-
-const submit = async (e) => {
-  e.preventDefault();
+  const submit = async (e) => {
+    e.preventDefault();
+    
   const API_URL = "/submit";
 
   try {
