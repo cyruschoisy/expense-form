@@ -87,7 +87,6 @@ export default async function handler(req, res) {
                   <p><strong>Budget:</strong> ${s.officers || 'N/A'}</p>
                   <p><strong>Date:</strong> ${s.date || 'N/A'}</p>
                   <p><strong>Total:</strong> $${Number(total).toFixed(2)}</p>
-                  <p><strong>Status:</strong> ${s.signature && s.signatureDate ? '<span class="badge bg-success">Signed & Dated</span>' : '<span class="badge bg-warning">Not Signed</span>'}</p>
                   ${s.signature ? `<p><strong>Signature:</strong> ${s.signature}</p>` : ''}
                   ${s.signatureDate ? `<p><strong>Signature Date:</strong> ${s.signatureDate}</p>` : ''}
                   <p><strong>Submitted:</strong> ${s.timestamp ? new Date(s.timestamp).toLocaleString('en-US', { timeZone: 'America/Toronto' }) + ' Toronto' : 'N/A'}</p>
@@ -98,6 +97,7 @@ export default async function handler(req, res) {
                     <div class="mb-2 p-2 border rounded">
                       <p class="mb-1"><strong>Description:</strong> ${item.description || 'N/A'}</p>
                       <p class="mb-1"><strong>Budget Line:</strong> ${item.budgetLine || 'N/A'}</p>
+                      <p class="mb-1"><strong>Budget:</strong> ${item.officers || 'N/A'}</p>
                       <p class="mb-1"><strong>Amount:</strong> $${parseFloat(item.amount || 0).toFixed(2)}</p>
                       <p class="mb-0"><strong>Receipts:</strong> ${item.receipts && item.receipts.length > 0 ? item.receipts.map(r => `<a class="badge text-bg-secondary text-decoration-none me-1" target="_blank" href="${r.url}">${r.originalName || r.filename}</a>`).join(' ') : '<span class="text-muted">None</span>'}</p>
                     </div>

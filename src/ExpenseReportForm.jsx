@@ -24,6 +24,7 @@ export default function ExpenseReportForm() {
       budgetLine: "",
       amount: "",
       notes: "",
+      officers: "",
       receipts: []
     }
   ]);
@@ -40,7 +41,7 @@ export default function ExpenseReportForm() {
   const addItem = () =>
     setItems([
       ...items,
-      { description: "", budgetLine: "", amount: "", notes: "", receipts: [] }
+      { description: "", budgetLine: "", amount: "", notes: "", officers: "", receipts: [] }
   ]);
 
   const deleteItem = (index) => {
@@ -82,6 +83,7 @@ export default function ExpenseReportForm() {
         budgetLine: item.budgetLine,
         amount: item.amount,
         notes: item.notes,
+        officers: item.officers,
         receipts: await Promise.all(
           item.receipts.map(async (file) => ({
             name: file.name,
@@ -203,22 +205,6 @@ const officers = [
           />
         </p>
 
-        <p>Budget<br></br>
-          <select
-            className="form-control"
-            required
-            value={form.officers}
-            onChange={(e) => updateForm("officers", e.target.value)}
-          >
-            <option value="">Select a Budget</option>
-            {officers.map((officer) => (
-              <option key={officer} value={officer}>
-                {officer}
-              </option>
-            ))}
-          </select>
-        </p>
-
         <h3 className="pt-5">Expenses</h3>
 
         {items.map((item, i) => (
@@ -237,7 +223,7 @@ const officers = [
                 />
               </div>
 
-              <div className="col-md-3">
+              <div className="col-md-2">
                 Budget Line <br></br>
                 <input
                   className="form-control"
@@ -247,6 +233,25 @@ const officers = [
                     updateItem(i, "budgetLine", e.target.value)
                   }
                 />
+              </div>
+
+              <div className="col-md-2">
+                Budget <br></br>
+                <select
+                  className="form-control"
+                  required
+                  value={item.officers}
+                  onChange={(e) =>
+                    updateItem(i, "officers", e.target.value)
+                  }
+                >
+                  <option value="">Select</option>
+                  {officers.map((officer) => (
+                    <option key={officer} value={officer}>
+                      {officer}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="col-md-2">
@@ -262,7 +267,7 @@ const officers = [
                 />
               </div>
 
-              <div className="col-md-3">
+              <div className="col-md-2">
                 Receipt <br></br>
                 <input
                   type="file"
