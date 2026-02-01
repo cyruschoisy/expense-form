@@ -70,7 +70,15 @@ export default async function handler(req, res) {
     };
 
     // Save the new submission directly
-    await saveSubmission(payload);
+    try {
+      await saveSubmission(payload);
+      console.log('Successfully saved submission:', submissionId);
+    } catch (saveErr) {
+      console.error('Failed to save submission:', saveErr);
+      res.statusCode = 500;
+      res.end(JSON.stringify({ error: 'Failed to save submission' }));
+      return;
+    }
 
     res.setHeader('Content-Type', 'application/json');
     res.statusCode = 200;

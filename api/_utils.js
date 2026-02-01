@@ -1,7 +1,15 @@
-import crypto from 'crypto';
-import { list, put } from '@vercel/blob';
-import { parse as parseCookie, serialize as serializeCookie } from 'cookie';
-import fs from 'fs/promises';
+// Simple health check function
+export async function healthCheck() {
+  try {
+    console.log('Running health check...');
+    const { blobs } = await list();
+    console.log('Blob list successful, found', blobs.length, 'blobs');
+    return { status: 'ok', blobCount: blobs.length };
+  } catch (err) {
+    console.error('Health check failed:', err);
+    return { status: 'error', error: err.message };
+  }
+}
 
 export async function parseJsonBody(req) {
   const chunks = [];
@@ -122,34 +130,80 @@ const SUBMISSIONS_INDEX_KEY = 'submissions-index.json';
 
 export async function loadSubmissions() {
   try {
-    console.log('Loading submissions index...');
+    console.log('Loading submissions...');
     const { blobs } = await list();
 
-    // Find the index file
+    // First try the new index-based system
     const indexBlob = blobs.find((b) => b.pathname === SUBMISSIONS_INDEX_KEY);
-    if (!indexBlob) {
-      console.log('No submissions index found');
-      return [];
+    if (indexBlob) {
+      console.log('Found index blob, using new system...');
+      return await loadFromIndex(blobs, indexBlob);
     }
 
-    // Load the index
+    // Fallback to old single-file system for backward compatibility
+    console.log('No index found, checking for old submissions.json...');
+    const oldBlob = blobs.find((b) => b.pathname === 'submissions.json');
+    if (oldBlob) {
+      console.log('Found old submissions.json, migrating...');
+      const response = await fetch(oldBlob.downloadUrl || oldBlob.url);
+      if (response.ok) {
+        const submissions = await response.json();
+        if (Array.isArray(submissions)) {
+          console.log(`Migrating ${submissions.length} submissions from old system`);
+          // Save using new system
+          await saveSubmissions(submissions);
+          return submissions;
+        }
+      }
+    }
+
+    console.log('No submissions found');
+    return [];
+  } catch (err) {
+    console.error('Error in loadSubmissions:', err);
+    return [];
+  }
+}
+
+async function loadFromIndex(blobs, indexBlob) {
+  try {
+    const startTime = Date.now();
+    const timeout = 8000; // 8 second timeout to stay under Vercel's 10s limit
+
     const indexResponse = await fetch(indexBlob.downloadUrl || indexBlob.url);
     if (!indexResponse.ok) {
-      console.error('Failed to fetch submissions index');
+      console.error('Failed to fetch submissions index:', indexResponse.status);
       return [];
     }
 
     const index = await indexResponse.json();
-    if (!Array.isArray(index.submissionIds)) {
-      console.error('Invalid submissions index format');
+    console.log('Index data:', JSON.stringify(index, null, 2));
+
+    let submissionIds = [];
+    if (index && Array.isArray(index.submissionIds)) {
+      submissionIds = index.submissionIds;
+    } else if (Array.isArray(index)) {
+      // Handle old format where index was just an array
+      submissionIds = index;
+    }
+
+    console.log(`Loading ${submissionIds.length} submissions...`);
+
+    if (submissionIds.length === 0) {
       return [];
     }
 
-    console.log(`Loading ${index.submissionIds.length} submissions...`);
-
-    // Load each submission
+    // Load each submission with error handling and timeout protection
     const submissions = [];
-    for (const submissionId of index.submissionIds) {
+    const maxLoad = Math.min(submissionIds.length, 20); // Limit for safety
+    for (let i = 0; i < maxLoad; i++) {
+      // Check timeout
+      if (Date.now() - startTime > timeout) {
+        console.log('Timeout approaching, stopping load at', submissions.length, 'submissions');
+        break;
+      }
+
+      const submissionId = submissionIds[i];
       try {
         const submissionBlob = blobs.find((b) => b.pathname === `submission-${submissionId}.json`);
         if (submissionBlob) {
@@ -157,17 +211,21 @@ export async function loadSubmissions() {
           if (response.ok) {
             const submission = await response.json();
             submissions.push(submission);
+          } else {
+            console.error(`Failed to fetch submission ${submissionId}:`, response.status);
           }
+        } else {
+          console.error(`Submission blob not found: submission-${submissionId}.json`);
         }
       } catch (err) {
-        console.error(`Failed to load submission ${submissionId}:`, err);
+        console.error(`Error loading submission ${submissionId}:`, err);
       }
     }
 
     console.log(`Successfully loaded ${submissions.length} submissions`);
     return submissions;
   } catch (err) {
-    console.error('Error loading submissions:', err);
+    console.error('Error in loadFromIndex:', err);
     return [];
   }
 }
@@ -195,19 +253,25 @@ export async function saveSubmission(submission) {
 
 async function updateSubmissionsIndex(newSubmissionId) {
   try {
+    console.log('Updating submissions index for:', newSubmissionId);
     const { blobs } = await list();
     const indexBlob = blobs.find((b) => b.pathname === SUBMISSIONS_INDEX_KEY);
-    
+
     let submissionIds = [];
     if (indexBlob) {
       try {
         const indexResponse = await fetch(indexBlob.downloadUrl || indexBlob.url);
         if (indexResponse.ok) {
           const index = await indexResponse.json();
-          submissionIds = Array.isArray(index.submissionIds) ? index.submissionIds : [];
+          if (Array.isArray(index.submissionIds)) {
+            submissionIds = index.submissionIds;
+          } else if (Array.isArray(index)) {
+            // Handle old array format
+            submissionIds = index;
+          }
         }
       } catch (err) {
-        console.error('Failed to load current index, starting fresh:', err);
+        console.error('Failed to load current index:', err);
       }
     }
 

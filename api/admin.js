@@ -15,10 +15,14 @@ export default async function handler(req, res) {
   let submissions = [];
   try {
     submissions = await loadSubmissions();
+    if (!Array.isArray(submissions)) {
+      console.error('loadSubmissions returned invalid data:', typeof submissions);
+      submissions = [];
+    }
     console.log('Admin page: loaded', submissions.length, 'submissions');
   } catch (err) {
     console.error('Failed to load submissions:', err);
-    // Continue with empty array
+    submissions = [];
   }
 
   submissions = submissions.sort((a, b) => {

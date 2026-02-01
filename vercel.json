@@ -4,6 +4,7 @@
     { "source": "/login", "destination": "/api/login" },
     { "source": "/logout", "destination": "/api/logout" },
     { "source": "/submit", "destination": "/api/submit" },
+    { "source": "/health", "destination": "/api/health" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
