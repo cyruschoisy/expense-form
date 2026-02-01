@@ -19,11 +19,6 @@ export default async function handler(req, res) {
     // Continue with empty array
   }
 
-  // // Ensure it's an array
-  // if (!Array.isArray(submissions)) {
-  //   submissions = [];
-  // }
-
   submissions = submissions.sort((a, b) => {
     switch (sortBy) {
       case 'name':
