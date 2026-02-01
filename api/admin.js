@@ -55,8 +55,9 @@ export default async function handler(req, res) {
 
   const rowsHtml = submissions
     .map((s, idx) => {
+      const onclickAttr = `loadDetails('${s.id}', ${idx})`;
       return `
-        <tr data-bs-toggle="collapse" data-bs-target="#details-${idx}" style="cursor: pointer;" onclick="loadDetails('${s.id}', ${idx})">
+        <tr data-bs-toggle="collapse" data-bs-target="#details-${idx}" style="cursor: pointer;" onclick="${onclickAttr}">
           <td>${s.date || ''}</td>
           <td>${s.name || ''}</td>
           <td>$${Number(s.total || 0).toFixed(2)}</td>
