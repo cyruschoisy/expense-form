@@ -118,74 +118,191 @@ export function requireAdmin(req, res) {
   return true;
 }
 
-const SUBMISSIONS_BLOB_KEY = 'submissions.json';
+const SUBMISSIONS_INDEX_KEY = 'submissions-index.json';
 
-export async function loadSubmissions() {
+// Metadata-only version for listing (avoids loading full submission data)
+export async function loadSubmissionsMetadata(limit = 50, offset = 0) {
   try {
-    console.log('Listing blobs...');
     const { blobs } = await list();
-    console.log('Found', blobs.length, 'blobs total');
-    blobs.forEach(b => console.log('Blob:', b.pathname));
-    
-    const existing = blobs.find((b) => b.pathname === SUBMISSIONS_BLOB_KEY);
-    if (!existing) {
-      console.log('No submissions blob found');
-      return [];
-    }
-    
-    console.log('Found submissions blob:', existing.pathname, 'url:', existing.url);
-    
-    // Use downloadUrl if available, otherwise use url
-    const fetchUrl = existing.downloadUrl || existing.url;
-    const url = fetchUrl + '?t=' + Date.now();
-    
-    console.log('Fetching from:', url);
-    
-    const response = await fetch(url, {
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache'
+    const indexBlob = blobs.find((b) => b.pathname === SUBMISSIONS_INDEX_KEY);
+
+    if (!indexBlob) {
+      // Check for old single file
+      const oldBlob = blobs.find((b) => b.pathname === 'submissions.json');
+      if (oldBlob) {
+        console.log('Migrating from old system...');
+        const response = await fetch(oldBlob.downloadUrl || oldBlob.url);
+        if (response.ok) {
+          const submissions = await response.json();
+          if (Array.isArray(submissions)) {
+            await migrateToNewSystem(submissions);
+            return submissions.slice(offset, offset + limit).map(createMetadata);
+          }
+        }
       }
-    });
-    
-    if (!response.ok) {
-      console.error('Failed to fetch submissions:', response.status, response.statusText);
-      const text = await response.text();
-      console.error('Response body:', text);
       return [];
     }
-    
-    const data = await response.json();
-    console.log('Loaded submissions:', data.length);
-    return Array.isArray(data) ? data : [];
+
+    const indexResponse = await fetch(indexBlob.downloadUrl || indexBlob.url);
+    if (!indexResponse.ok) return [];
+
+    const index = await indexResponse.json();
+    const submissionIds = Array.isArray(index.submissionIds) ? index.submissionIds : [];
+
+    // Load metadata for the requested range
+    const metadata = [];
+    const endIndex = Math.min(submissionIds.length, offset + limit);
+
+    for (let i = offset; i < endIndex; i++) {
+      const submissionId = submissionIds[i];
+      try {
+        const submissionBlob = blobs.find((b) => b.pathname === `submission-${submissionId}.json`);
+        if (submissionBlob) {
+          const response = await fetch(submissionBlob.downloadUrl || submissionBlob.url);
+          if (response.ok) {
+            const submission = await response.json();
+            metadata.push(createMetadata(submission));
+          }
+        }
+      } catch (err) {
+        console.error(`Failed to load metadata for ${submissionId}:`, err);
+      }
+    }
+
+    return metadata;
   } catch (err) {
-    console.error('Error loading submissions:', err);
+    console.error('Error loading submissions metadata:', err);
     return [];
   }
 }
 
-export async function saveSubmissions(submissions) {
+// Load full submission data by ID
+export async function loadSubmissionById(submissionId) {
   try {
-    const jsonString = JSON.stringify(submissions, null, 2);
-    console.log('Saving submissions, count:', submissions.length, 'size:', jsonString.length);
-    
-    const result = await put(SUBMISSIONS_BLOB_KEY, jsonString, {
+    const { blobs } = await list();
+    const submissionBlob = blobs.find((b) => b.pathname === `submission-${submissionId}.json`);
+
+    if (!submissionBlob) return null;
+
+    const response = await fetch(submissionBlob.downloadUrl || submissionBlob.url);
+    return response.ok ? await response.json() : null;
+  } catch (err) {
+    console.error(`Error loading submission ${submissionId}:`, err);
+    return null;
+  }
+}
+
+// Create metadata object (summary info for listing, more fields for display)
+function createMetadata(submission) {
+  const total = submission.total || (submission.items ?
+    submission.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0) : 0);
+
+  return {
+    id: submission.id,
+    name: submission.name,
+    email: submission.email,
+    phone: submission.phone,
+    date: submission.date,
+    total: total,
+    timestamp: submission.timestamp,
+    itemCount: submission.items ? submission.items.length : 0,
+    hasReceipts: submission.items ? submission.items.some(item => item.receipts && item.receipts.length > 0) : false,
+    signature: submission.signature,
+    signatureDate: submission.signatureDate,
+    officers: submission.officers
+  };
+}
+
+// Migrate from old single-file system to new system
+async function migrateToNewSystem(submissions) {
+  console.log(`Migrating ${submissions.length} submissions to new system...`);
+
+  const submissionIds = [];
+  for (const submission of submissions) {
+    const submissionId = submission.id;
+    submissionIds.push(submissionId);
+
+    try {
+      await put(`submission-${submissionId}.json`, JSON.stringify(submission, null, 2), {
+        access: 'public',
+        contentType: 'application/json'
+      });
+    } catch (err) {
+      console.error(`Failed to migrate submission ${submissionId}:`, err);
+    }
+  }
+
+  // Save index
+  const index = { submissionIds, migratedAt: new Date().toISOString() };
+  await put(SUBMISSIONS_INDEX_KEY, JSON.stringify(index, null, 2), {
+    access: 'public',
+    contentType: 'application/json'
+  });
+
+  console.log('Migration complete');
+}
+
+export async function saveSubmissions(submissions) {
+  // This function is now for bulk operations - save each submission individually
+  for (const submission of submissions) {
+    await saveSubmission(submission);
+  }
+}
+
+export async function saveSubmission(submission) {
+  try {
+    const submissionId = submission.id;
+    console.log('Saving submission:', submissionId);
+
+    // Save the full submission
+    await put(`submission-${submissionId}.json`, JSON.stringify(submission, null, 2), {
       access: 'public',
       contentType: 'application/json'
     });
-    
-    console.log('Successfully saved to blob:', result.url);
+
+    // Update the index
+    await updateSubmissionsIndex(submissionId);
+
+    console.log('Successfully saved submission:', submissionId);
   } catch (err) {
-    console.error('Blob storage error:', err);
-    throw err; // Re-throw so submit.js knows it failed
+    console.error('Error saving submission:', err);
+    throw err;
   }
-  
-  // Also save to local file for development
+}
+
+async function updateSubmissionsIndex(newSubmissionId) {
   try {
-    await fs.writeFile('./submissions.json', JSON.stringify(submissions, null, 2));
-    console.log('Also saved to local file');
+    const { blobs } = await list();
+    const indexBlob = blobs.find((b) => b.pathname === SUBMISSIONS_INDEX_KEY);
+
+    let submissionIds = [];
+    if (indexBlob) {
+      try {
+        const indexResponse = await fetch(indexBlob.downloadUrl || indexBlob.url);
+        if (indexResponse.ok) {
+          const index = await indexResponse.json();
+          submissionIds = Array.isArray(index.submissionIds) ? index.submissionIds : [];
+        }
+      } catch (err) {
+        console.error('Failed to load current index:', err);
+      }
+    }
+
+    // Add the new submission ID if not already present
+    if (!submissionIds.includes(newSubmissionId)) {
+      submissionIds.push(newSubmissionId);
+    }
+
+    // Update index
+    const newIndex = { submissionIds, lastUpdated: new Date().toISOString() };
+    await put(SUBMISSIONS_INDEX_KEY, JSON.stringify(newIndex, null, 2), {
+      access: 'public',
+      contentType: 'application/json'
+    });
+
+    console.log('Updated index, now contains', submissionIds.length, 'submissions');
   } catch (err) {
-    // Local file write is optional, don't fail if it errors
-    console.error('Failed to save submissions to local file:', err);
+    console.error('Error updating submissions index:', err);
+    throw err;
   }
 }

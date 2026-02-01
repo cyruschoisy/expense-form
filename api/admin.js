@@ -1,4 +1,4 @@
-import { loadSubmissions, requireAdmin, saveSubmissions } from './_utils.js';
+import { loadSubmissionsMetadata, loadSubmissionById, requireAdmin } from './_utils.js';
 
 export default async function handler(req, res) {
   if (!requireAdmin(req, res)) {
@@ -10,39 +10,44 @@ export default async function handler(req, res) {
   const query = req.url.split('?')[1] || '';
   const params = new URLSearchParams(query);
   const sortBy = params.get('sort') || 'recent';
+  const page = parseInt(params.get('page') || '1');
+  const perPage = 10; // Show 10 submissions per page
 
+  // Load metadata for current page
   let submissions = [];
+  let totalCount = 0;
   try {
-    submissions = await loadSubmissions();
-    console.log('Admin page: loaded', submissions.length, 'submissions');
+    // For now, load all metadata (we'll optimize this later)
+    const allMetadata = await loadSubmissionsMetadata(1000, 0); // Load up to 1000 for now
+    totalCount = allMetadata.length;
+
+    // Sort the metadata
+    submissions = allMetadata.sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return (a.name || '').localeCompare(b.name || '');
+        case 'date':
+          return new Date(b.date || 0) - new Date(a.date || 0);
+        case 'recent':
+        default:
+          return new Date(b.timestamp || 0) - new Date(a.timestamp || 0);
+      }
+    });
+
+    console.log('Admin page: loaded', submissions.length, 'submission metadata');
   } catch (err) {
     console.error('Failed to load submissions:', err);
-    // Continue with empty array
+    submissions = [];
   }
 
-  submissions = submissions.sort((a, b) => {
-    switch (sortBy) {
-      case 'name':
-        return (a.name || '').localeCompare(b.name || '');
-      case 'date':
-        return new Date(b.date || 0) - new Date(a.date || 0);
-      case 'recent':
-      default:
-        return new Date(b.timestamp || 0) - new Date(a.timestamp || 0);
-    }
-  });
+  // Pagination
+  const totalPages = Math.ceil(totalCount / perPage);
+  const startIndex = (page - 1) * perPage;
+  const endIndex = startIndex + perPage;
+  const paginatedSubmissions = submissions.slice(startIndex, endIndex);
 
-  const totalAmount = submissions.reduce((sum, s) => {
-    const sTotal = typeof s.total === 'number'
-      ? s.total
-      : Array.isArray(s.items)
-      ? s.items.filter(item => item && typeof item === 'object').reduce((itemSum, item) => {
-          const amt = parseFloat(item.amount || 0);
-          return itemSum + (isNaN(amt) ? 0 : amt);
-        }, 0)
-      : 0;
-    return sum + sTotal;
-  }, 0);
+  // Calculate total amount from all submissions (metadata has totals)
+  const totalAmount = submissions.reduce((sum, s) => sum + (s.total || 0), 0);
 
   const formatPhone = (phone) => {
     if (!phone) return 'N/A';
