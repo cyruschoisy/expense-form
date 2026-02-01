@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { put } from '@vercel/blob';
-import { loadSubmissions, parseJsonBody, saveSubmissions } from './_utils.js';
+import { saveSubmission } from './_utils.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -69,9 +69,7 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString()
     };
 
-    const submissions = await loadSubmissions();
-    submissions.push(payload);
-    await saveSubmissions(submissions);
+    await saveSubmission(payload);
 
     res.setHeader('Content-Type', 'application/json');
     res.statusCode = 200;
