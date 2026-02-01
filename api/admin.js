@@ -10,19 +10,14 @@ export default async function handler(req, res) {
   const query = req.url.split('?')[1] || '';
   const params = new URLSearchParams(query);
   const sortBy = params.get('sort') || 'recent';
-  const perPage = 10; // Show 10 submissions per page
 
   let submissions = [];
   try {
     submissions = await loadSubmissions();
-    if (!Array.isArray(submissions)) {
-      console.error('loadSubmissions returned invalid data:', typeof submissions);
-      submissions = [];
-    }
     console.log('Admin page: loaded', submissions.length, 'submissions');
   } catch (err) {
     console.error('Failed to load submissions:', err);
-    submissions = [];
+    // Continue with empty array
   }
 
   submissions = submissions.sort((a, b) => {
@@ -36,14 +31,6 @@ export default async function handler(req, res) {
         return new Date(b.timestamp || 0) - new Date(a.timestamp || 0);
     }
   });
-
-  // Pagination
-  const totalSubmissions = submissions.length;
-  const totalPages = Math.ceil(totalSubmissions / perPage);
-  const page = Math.max(1, Math.min(totalPages || 1, parseInt(params.get('page') || '1')));
-  const startIndex = (page - 1) * perPage;
-  const endIndex = startIndex + perPage;
-  const paginatedSubmissions = submissions.slice(startIndex, endIndex);
 
   const totalAmount = submissions.reduce((sum, s) => {
     const sTotal = typeof s.total === 'number'
@@ -66,7 +53,7 @@ export default async function handler(req, res) {
     return phone; // fallback
   };
 
-  const rowsHtml = paginatedSubmissions
+  const rowsHtml = submissions
     .map((s, idx) => {
       const total =
         typeof s.total === 'number'
@@ -182,23 +169,6 @@ export default async function handler(req, res) {
             </div>
           </div>
         </div>
-
-        ${totalPages > 1 ? `
-        <nav aria-label="Submission pagination" class="mt-4">
-          <ul class="pagination justify-content-center">
-            ${page > 1 ? `<li class="page-item"><a class="page-link" href="?sort=${sortBy}&page=${page - 1}">Previous</a></li>` : '<li class="page-item disabled"><span class="page-link">Previous</span></li>'}
-            
-            ${Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const pageNum = Math.max(1, Math.min(totalPages - 4, page - 2)) + i;
-              if (pageNum > totalPages) return '';
-              return `<li class="page-item ${pageNum === page ? 'active' : ''}"><a class="page-link" href="?sort=${sortBy}&page=${pageNum}">${pageNum}</a></li>`;
-            }).join('')}
-            
-            ${page < totalPages ? `<li class="page-item"><a class="page-link" href="?sort=${sortBy}&page=${page + 1}">Next</a></li>` : '<li class="page-item disabled"><span class="page-link">Next</span></li>'}
-          </ul>
-          <p class="text-center text-muted mt-2">Page ${page} of ${totalPages} (${totalSubmissions} total submissions)</p>
-        </nav>
-        ` : ''}
       </main>
 
       <script>

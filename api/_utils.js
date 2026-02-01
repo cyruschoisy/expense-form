@@ -1,15 +1,7 @@
-// Simple health check function
-export async function healthCheck() {
-  try {
-    console.log('Running health check...');
-    const { blobs } = await list();
-    console.log('Blob list successful, found', blobs.length, 'blobs');
-    return { status: 'ok', blobCount: blobs.length };
-  } catch (err) {
-    console.error('Health check failed:', err);
-    return { status: 'error', error: err.message };
-  }
-}
+import crypto from 'crypto';
+import { list, put } from '@vercel/blob';
+import { parse as parseCookie, serialize as serializeCookie } from 'cookie';
+import fs from 'fs/promises';
 
 export async function parseJsonBody(req) {
   const chunks = [];
@@ -126,173 +118,74 @@ export function requireAdmin(req, res) {
   return true;
 }
 
-const SUBMISSIONS_INDEX_KEY = 'submissions-index.json';
+const SUBMISSIONS_BLOB_KEY = 'submissions.json';
 
 export async function loadSubmissions() {
   try {
-    console.log('Loading submissions...');
+    console.log('Listing blobs...');
     const { blobs } = await list();
-
-    // First try the new index-based system
-    const indexBlob = blobs.find((b) => b.pathname === SUBMISSIONS_INDEX_KEY);
-    if (indexBlob) {
-      console.log('Found index blob, using new system...');
-      return await loadFromIndex(blobs, indexBlob);
+    console.log('Found', blobs.length, 'blobs total');
+    blobs.forEach(b => console.log('Blob:', b.pathname));
+    
+    const existing = blobs.find((b) => b.pathname === SUBMISSIONS_BLOB_KEY);
+    if (!existing) {
+      console.log('No submissions blob found');
+      return [];
     }
-
-    // Fallback to old single-file system for backward compatibility
-    console.log('No index found, checking for old submissions.json...');
-    const oldBlob = blobs.find((b) => b.pathname === 'submissions.json');
-    if (oldBlob) {
-      console.log('Found old submissions.json, migrating...');
-      const response = await fetch(oldBlob.downloadUrl || oldBlob.url);
-      if (response.ok) {
-        const submissions = await response.json();
-        if (Array.isArray(submissions)) {
-          console.log(`Migrating ${submissions.length} submissions from old system`);
-          // Save using new system
-          await saveSubmissions(submissions);
-          return submissions;
-        }
+    
+    console.log('Found submissions blob:', existing.pathname, 'url:', existing.url);
+    
+    // Use downloadUrl if available, otherwise use url
+    const fetchUrl = existing.downloadUrl || existing.url;
+    const url = fetchUrl + '?t=' + Date.now();
+    
+    console.log('Fetching from:', url);
+    
+    const response = await fetch(url, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache'
       }
+    });
+    
+    if (!response.ok) {
+      console.error('Failed to fetch submissions:', response.status, response.statusText);
+      const text = await response.text();
+      console.error('Response body:', text);
+      return [];
     }
-
-    console.log('No submissions found');
-    return [];
+    
+    const data = await response.json();
+    console.log('Loaded submissions:', data.length);
+    return Array.isArray(data) ? data : [];
   } catch (err) {
-    console.error('Error in loadSubmissions:', err);
+    console.error('Error loading submissions:', err);
     return [];
   }
 }
 
-async function loadFromIndex(blobs, indexBlob) {
+export async function saveSubmissions(submissions) {
   try {
-    const startTime = Date.now();
-    const timeout = 8000; // 8 second timeout to stay under Vercel's 10s limit
-
-    const indexResponse = await fetch(indexBlob.downloadUrl || indexBlob.url);
-    if (!indexResponse.ok) {
-      console.error('Failed to fetch submissions index:', indexResponse.status);
-      return [];
-    }
-
-    const index = await indexResponse.json();
-    console.log('Index data:', JSON.stringify(index, null, 2));
-
-    let submissionIds = [];
-    if (index && Array.isArray(index.submissionIds)) {
-      submissionIds = index.submissionIds;
-    } else if (Array.isArray(index)) {
-      // Handle old format where index was just an array
-      submissionIds = index;
-    }
-
-    console.log(`Loading ${submissionIds.length} submissions...`);
-
-    if (submissionIds.length === 0) {
-      return [];
-    }
-
-    // Load each submission with error handling and timeout protection
-    const submissions = [];
-    const maxLoad = Math.min(submissionIds.length, 20); // Limit for safety
-    for (let i = 0; i < maxLoad; i++) {
-      // Check timeout
-      if (Date.now() - startTime > timeout) {
-        console.log('Timeout approaching, stopping load at', submissions.length, 'submissions');
-        break;
-      }
-
-      const submissionId = submissionIds[i];
-      try {
-        const submissionBlob = blobs.find((b) => b.pathname === `submission-${submissionId}.json`);
-        if (submissionBlob) {
-          const response = await fetch(submissionBlob.downloadUrl || submissionBlob.url);
-          if (response.ok) {
-            const submission = await response.json();
-            submissions.push(submission);
-          } else {
-            console.error(`Failed to fetch submission ${submissionId}:`, response.status);
-          }
-        } else {
-          console.error(`Submission blob not found: submission-${submissionId}.json`);
-        }
-      } catch (err) {
-        console.error(`Error loading submission ${submissionId}:`, err);
-      }
-    }
-
-    console.log(`Successfully loaded ${submissions.length} submissions`);
-    return submissions;
-  } catch (err) {
-    console.error('Error in loadFromIndex:', err);
-    return [];
-  }
-}
-
-export async function saveSubmission(submission) {
-  try {
-    const submissionId = submission.id;
-    console.log('Saving single submission:', submissionId);
-
-    // Save the submission
-    await put(`submission-${submissionId}.json`, JSON.stringify(submission, null, 2), {
+    const jsonString = JSON.stringify(submissions, null, 2);
+    console.log('Saving submissions, count:', submissions.length, 'size:', jsonString.length);
+    
+    const result = await put(SUBMISSIONS_BLOB_KEY, jsonString, {
       access: 'public',
       contentType: 'application/json'
     });
-
-    // Update the index by adding this submission ID
-    await updateSubmissionsIndex(submissionId);
-
-    console.log('Successfully saved submission:', submissionId);
+    
+    console.log('Successfully saved to blob:', result.url);
   } catch (err) {
-    console.error('Error saving submission:', err);
-    throw err;
+    console.error('Blob storage error:', err);
+    throw err; // Re-throw so submit.js knows it failed
   }
-}
-
-async function updateSubmissionsIndex(newSubmissionId) {
+  
+  // Also save to local file for development
   try {
-    console.log('Updating submissions index for:', newSubmissionId);
-    const { blobs } = await list();
-    const indexBlob = blobs.find((b) => b.pathname === SUBMISSIONS_INDEX_KEY);
-
-    let submissionIds = [];
-    if (indexBlob) {
-      try {
-        const indexResponse = await fetch(indexBlob.downloadUrl || indexBlob.url);
-        if (indexResponse.ok) {
-          const index = await indexResponse.json();
-          if (Array.isArray(index.submissionIds)) {
-            submissionIds = index.submissionIds;
-          } else if (Array.isArray(index)) {
-            // Handle old array format
-            submissionIds = index;
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load current index:', err);
-      }
-    }
-
-    // Add the new submission ID if not already present
-    if (!submissionIds.includes(newSubmissionId)) {
-      submissionIds.push(newSubmissionId);
-      console.log('Added new submission ID to index:', newSubmissionId);
-    } else {
-      console.log('Submission ID already in index:', newSubmissionId);
-    }
-
-    // Update index
-    const newIndex = { submissionIds, lastUpdated: new Date().toISOString() };
-    await put(SUBMISSIONS_INDEX_KEY, JSON.stringify(newIndex, null, 2), {
-      access: 'public',
-      contentType: 'application/json'
-    });
-
-    console.log('Updated index, now contains', submissionIds.length, 'submissions');
+    await fs.writeFile('./submissions.json', JSON.stringify(submissions, null, 2));
+    console.log('Also saved to local file');
   } catch (err) {
-    console.error('Error updating submissions index:', err);
-    throw err;
+    // Local file write is optional, don't fail if it errors
+    console.error('Failed to save submissions to local file:', err);
   }
 }

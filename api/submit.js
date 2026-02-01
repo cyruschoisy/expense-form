@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { put } from '@vercel/blob';
-import { saveSubmission, parseJsonBody } from './_utils.js';
+import { loadSubmissions, parseJsonBody, saveSubmissions } from './_utils.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -69,16 +69,9 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString()
     };
 
-    // Save the new submission directly
-    try {
-      await saveSubmission(payload);
-      console.log('Successfully saved submission:', submissionId);
-    } catch (saveErr) {
-      console.error('Failed to save submission:', saveErr);
-      res.statusCode = 500;
-      res.end(JSON.stringify({ error: 'Failed to save submission' }));
-      return;
-    }
+    const submissions = await loadSubmissions();
+    submissions.push(payload);
+    await saveSubmissions(submissions);
 
     res.setHeader('Content-Type', 'application/json');
     res.statusCode = 200;
