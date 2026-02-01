@@ -7,9 +7,22 @@ export default async function handler(req, res) {
     return res.end();
   }
 
-  const submissions = (await loadSubmissions()).sort(
-    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-  );
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const sortBy = url.searchParams.get('sort') || 'recent';
+
+  let submissions = await loadSubmissions();
+
+  submissions = submissions.sort((a, b) => {
+    switch (sortBy) {
+      case 'name':
+        return (a.name || '').localeCompare(b.name || '');
+      case 'date':
+        return new Date(b.date || 0) - new Date(a.date || 0);
+      case 'recent':
+      default:
+        return new Date(b.timestamp || 0) - new Date(a.timestamp || 0);
+    }
+  });
 
   const rowsHtml = submissions
     .map((s, idx) => {
@@ -30,13 +43,12 @@ export default async function handler(req, res) {
 
       return `
         <tr>
-          <td>${idx + 1}</td>
+          <td>${s.date || ''}</td>
+          <td>${s.officers || ''}</td>
+          <td>$${Number(total).toFixed(2)}</td>
           <td>${s.name || ''}</td>
           <td>${s.email || ''}</td>
           <td>${s.phone || ''}</td>
-          <td>${s.officers || ''}</td>
-          <td>${s.date || ''}</td>
-          <td>$${Number(total).toFixed(2)}</td>
           <td>${s.timestamp ? new Date(s.timestamp).toLocaleString() : ''}</td>
           <td>${receipts || '<span class="text-muted">None</span>'}</td>
           <td>
