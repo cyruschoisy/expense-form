@@ -92,6 +92,7 @@ function requireAuth(req, res, next) {
    DATABASE
 ========================= */
 
+DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:YNBShaaoDlPpePNzVgKQdycFmTEDBVYM@centerbeam.proxy.rlwy.net:37056/railway';
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
