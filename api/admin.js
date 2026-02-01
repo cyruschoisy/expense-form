@@ -31,8 +31,10 @@ export default async function handler(req, res) {
     // Continue with empty array
   }
 
-  // Filter out invalid submissions
-  submissions = submissions.filter(s => s && typeof s === 'object' && s.id);
+  // Ensure it's an array
+  if (!Array.isArray(submissions)) {
+    submissions = [];
+  }
 
   submissions = submissions.sort((a, b) => {
     switch (sortBy) {
