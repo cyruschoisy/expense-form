@@ -16,6 +16,7 @@ export default function ExpenseReportForm() {
 
   const [budgetConfirmed, setBudgetConfirmed] = useState(false);
   const [truthConfirmed, setTruthConfirmed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [items, setItems] = useState([
     {
@@ -59,6 +60,33 @@ export default function ExpenseReportForm() {
     setItems(updated);
   };
 
+  const compressImage = (file, maxWidth = 1200, quality = 0.8) => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(resolve, 'image/jpeg', quality);
+      };
+      
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const toBase64 = (file) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -69,13 +97,14 @@ export default function ExpenseReportForm() {
 
   const submit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-  const API_BASE =
-    import.meta.env.VITE_API_BASE ||
-    (import.meta.env.DEV ? "http://localhost:3000" : "");
-  const API_URL = `${API_BASE}/api/submit`;
+    const API_BASE =
+      import.meta.env.VITE_API_BASE ||
+      (import.meta.env.DEV ? "http://localhost:3000" : "");
+    const API_URL = `${API_BASE}/api/submit`;
 
-  try {
+    try {
     const encodedItems = await Promise.all(
       items.map(async (item) => ({
         description: item.description,
@@ -84,11 +113,26 @@ export default function ExpenseReportForm() {
         notes: item.notes,
         officers: item.officers,
         receipts: await Promise.all(
-          item.receipts.map(async (file) => ({
-            name: file.name,
-            type: file.type,
-            data: await toBase64(file)
-          }))
+          item.receipts.map(async (file) => {
+            // Compress images to reduce payload size
+            let processedFile = file;
+            if (file.type.startsWith('image/')) {
+              try {
+                const compressed = await compressImage(file);
+                // Only use compressed version if it's actually smaller
+                processedFile = compressed.size < file.size ? compressed : file;
+                console.log(`Receipt ${file.name}: ${file.size} → ${processedFile.size} bytes`);
+              } catch (err) {
+                console.warn('Failed to compress image, using original:', err);
+              }
+            }
+            
+            return {
+              name: file.name,
+              type: processedFile.type || file.type,
+              data: await toBase64(processedFile)
+            };
+          })
         )
       }))
     );
@@ -112,6 +156,8 @@ export default function ExpenseReportForm() {
     }
   } catch (error) {
     alert("Error: " + error.message);
+  } finally {
+    setIsSubmitting(false);
   }
 };
 
@@ -381,7 +427,16 @@ const officers = [
         </div>
 
         <div className="text-center">
-          <button className="btn btn-dark my-2" type="submit" disabled={!budgetConfirmed || !truthConfirmed}>Submit Expense Report</button>
+          <button className="btn btn-dark my-2" type="submit" disabled={!budgetConfirmed || !truthConfirmed || isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Compressing & Submitting...
+              </>
+            ) : (
+              'Submit Expense Report'
+            )}
+          </button>
         </div>
       </form>
     </div>
