@@ -7,9 +7,31 @@ export default async function handler(req, res) {
     return res.end();
   }
 
-  const submissions = (await loadSubmissions()).sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+  const query = req.url.split('?')[1] || '';
+  const params = new URLSearchParams(query);
+  const sortBy = params.get('sort') || 'recent';
 
-  const cardsHtml = submissions
+  let submissions = [];
+  try {
+    submissions = await loadSubmissions();
+  } catch (err) {
+    console.error('Failed to load submissions:', err);
+    // Continue with empty array
+  }
+
+  submissions = submissions.sort((a, b) => {
+    switch (sortBy) {
+      case 'name':
+        return (a.name || '').localeCompare(b.name || '');
+      case 'date':
+        return new Date(b.date || 0) - new Date(a.date || 0);
+      case 'recent':
+      default:
+        return new Date(b.timestamp || 0) - new Date(a.timestamp || 0);
+    }
+  });
+
+  const rowsHtml = submissions
     .map((s, idx) => {
       const total =
         typeof s.total === 'number'
@@ -27,27 +49,26 @@ export default async function handler(req, res) {
         .join(' ');
 
       return `
-        <div class="card mb-3 submission-card">
-          <div class="card-body">
-            <div class="row align-items-center">
-              <div class="col-md-8">
-                <h5 class="card-title mb-1">${s.name || 'Unknown'}</h5>
-                <p class="card-text text-muted mb-1">${s.email || ''} • ${s.phone || ''}</p>
-                <p class="card-text mb-1"><strong>Budget:</strong> ${s.officers || ''} • <strong>Date:</strong> ${s.date || ''} • <strong>Total:</strong> $${Number(total).toFixed(2)}</p>
-                <p class="card-text mb-1"><strong>Submitted:</strong> ${s.timestamp ? new Date(s.timestamp).toLocaleString() : ''}</p>
-                ${receipts ? `<p class="card-text mb-1"><strong>Receipts:</strong> ${receipts}</p>` : ''}
-              </div>
-              <div class="col-md-4 text-end">
-                <button class="btn btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#details-${idx}">View Details</button>
-              </div>
-            </div>
-          </div>
-          <div class="collapse" id="details-${idx}">
-            <div class="card-body bg-light">
+        <tr>
+          <td>${s.date || ''}</td>
+          <td>${s.officers || ''}</td>
+          <td>$${Number(total).toFixed(2)}</td>
+          <td>${s.name || ''}</td>
+          <td>${s.email || ''}</td>
+          <td>${s.phone || ''}</td>
+          <td>${s.timestamp ? new Date(s.timestamp).toLocaleString() : ''}</td>
+          <td>${receipts || '<span class="text-muted">None</span>'}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#details-${idx}">Details</button>
+          </td>
+        </tr>
+        <tr class="collapse" id="details-${idx}">
+          <td colspan="10">
+            <div class="p-3 bg-light rounded">
               <pre class="mb-0">${JSON.stringify(s, null, 2)}</pre>
             </div>
-          </div>
-        </div>
+          </td>
+        </tr>
       `;
     })
     .join('');
