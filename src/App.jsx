@@ -1,10 +1,16 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ExpenseReportForm from "./ExpenseReportForm";
-import Server from "./Server";
+import Login from "./Login";
 
 export default function App() {
   return (
-    <div style={{ }}>
-      <ExpenseReportForm />
-    </div>
+    <Router>
+      <div>
+        <Routes>
+          <Route path="/" element={<ExpenseReportForm />} />
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
