@@ -7,8 +7,9 @@ export default async function handler(req, res) {
     return res.end();
   }
 
-  const url = new URL(req.url, `http://${req.headers.host}`);
-  const sortBy = url.searchParams.get('sort') || 'recent';
+  const query = req.url.split('?')[1] || '';
+  const params = new URLSearchParams(query);
+  const sortBy = params.get('sort') || 'recent';
 
   let submissions = await loadSubmissions();
 
