@@ -120,7 +120,7 @@ export default async function handler(req, res) {
         </div>
       </nav>
 
-      <main class="container py-4">
+      <main class="container-fluid py-4 px-5">
         <div class="card shadow-sm">
           <div class="card-body">
             <div class="row g-3 align-items-center mb-3">
