@@ -18,7 +18,7 @@ const SESSION_SECRET = crypto.randomBytes(64).toString('hex');
 const ADMIN_PASSWORD_HASH = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9';
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(bodyParser.json({ limit: '100mb' }));
@@ -96,13 +96,12 @@ function requireAuth(req, res, next) {
   }
 }
 
+DATABASE_URL = 'postgresql://postgres:YNBShaaoDlPpePNzVgKQdycFmTEDBVYM@centerbeam.proxy.rlwy.net:37056/railway' 
+
 // PostgreSQL connection setup
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'postgresql://postgres:YNBShaaoDlPpePNzVgKQdycFmTEDBVYM@postgres.railway.internal:5432/railway',
-  password: 'YNBShaaoDlPpePNzVgKQdycFmTEDBVYM',
-  port: 5432,
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
 });
 
 // Routes
