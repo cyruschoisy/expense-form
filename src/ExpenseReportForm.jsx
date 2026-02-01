@@ -29,8 +29,14 @@ export default function ExpenseReportForm() {
     }
   ]);
 
-  const updateForm = (field, value) =>
-    setForm({ ...form, [field]: value });
+  const formatPhoneInput = (value) => {
+    const cleaned = value.replace(/\D/g, '').slice(0, 10);
+    const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
+    if (match) {
+      return match[1] + (match[2] ? '-' + match[2] : '') + (match[3] ? '-' + match[3] : '');
+    }
+    return cleaned;
+  };
 
   const updateItem = (index, field, value) => {
     const updated = [...items];
@@ -164,7 +170,7 @@ const officers = [
       <hr className="pb-3"></hr>
 
       <form onSubmit={submit}>
-        <p className="">Non // Name <br></br>
+        <p className="">Non // Name (First + Last)<br></br>
         <input
           className="form-control"
           required
@@ -183,14 +189,14 @@ const officers = [
         />
         </p>
 
-        <p>Phone Number (e.g., 6131234567)<br></br>
+        <p>Phone Number (e.g., 613-123-4567)<br></br>
         <input
           className="form-control"
           type="tel"
           pattern="^\d{10}$"
           required
           value={form.phone}
-          onChange={(e) => updateForm("phone", e.target.value)}
+          onChange={(e) => updateForm("phone", formatPhoneInput(e.target.value))}
         />
         </p>
 
