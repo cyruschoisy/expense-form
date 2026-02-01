@@ -118,6 +118,7 @@ export default async function handler(req, res) {
             Expense Submissions
           </span>
           <div class="d-flex align-items-center gap-2">
+            <a href="/" class="btn btn-outline-primary btn-sm me-2">Back to Form</a>
             <span class="text-muted">Total: $${Number(totalAmount).toFixed(2)}</span>
             <a class="btn btn-outline-secondary btn-sm" href="/logout">Logout</a>
           </div>
