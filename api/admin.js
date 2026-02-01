@@ -59,7 +59,28 @@ export default async function handler(req, res) {
         <tr class="collapse" id="details-${idx}">
           <td colspan="3">
             <div class="p-3 bg-light rounded">
-              <pre class="mb-0">${JSON.stringify(s, null, 2)}</pre>
+              <div class="row">
+                <div class="col-md-6">
+                  <h6>Basic Information</h6>
+                  <p><strong>Name:</strong> ${s.name || 'N/A'}</p>
+                  <p><strong>Email:</strong> ${s.email || 'N/A'}</p>
+                  <p><strong>Phone:</strong> ${s.phone || 'N/A'}</p>
+                  <p><strong>Budget:</strong> ${s.officers || 'N/A'}</p>
+                  <p><strong>Date:</strong> ${s.date || 'N/A'}</p>
+                  <p><strong>Total:</strong> $${Number(total).toFixed(2)}</p>
+                  <p><strong>Submitted:</strong> ${s.timestamp ? new Date(s.timestamp).toLocaleString() : 'N/A'}</p>
+                </div>
+                <div class="col-md-6">
+                  <h6>Expense Items</h6>
+                  ${s.items && s.items.length > 0 ? s.items.map(item => `
+                    <div class="mb-2 p-2 border rounded">
+                      <p class="mb-1"><strong>Description:</strong> ${item.description || 'N/A'}</p>
+                      <p class="mb-1"><strong>Amount:</strong> $${parseFloat(item.amount || 0).toFixed(2)}</p>
+                      <p class="mb-0"><strong>Receipts:</strong> ${item.receipts && item.receipts.length > 0 ? item.receipts.map(r => `<a class="badge text-bg-secondary text-decoration-none me-1" target="_blank" href="/receipts/${encodeURIComponent(r.filename)}">${r.originalName || r.filename}</a>`).join(' ') : '<span class="text-muted">None</span>'}</p>
+                    </div>
+                  `).join('') : '<p class="text-muted">No items</p>'}
+                </div>
+              </div>
             </div>
           </td>
         </tr>
