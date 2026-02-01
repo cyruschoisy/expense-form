@@ -108,11 +108,15 @@ export default async function handler(req, res) {
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>Admin Dashboard</title>
       <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+      <link rel="icon" href="/ess-logo.png">
     </head>
     <body class="bg-light">
       <nav class="navbar navbar-expand-lg bg-white border-bottom">
         <div class="container-fluid">
-          <span class="navbar-brand fw-bold">Expense Submissions</span>
+          <span class="navbar-brand fw-bold">
+            <img src="/ess-logo.png" alt="ESS Logo" class="me-2" style="height: 32px;">
+            Expense Submissions
+          </span>
           <div class="d-flex align-items-center gap-2">
             <span class="text-muted">Total: $${Number(totalAmount).toFixed(2)}</span>
             <a class="btn btn-outline-secondary btn-sm" href="/logout">Logout</a>
