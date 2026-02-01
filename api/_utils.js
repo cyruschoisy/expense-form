@@ -120,7 +120,7 @@ export function requireAdmin(req, res) {
 const SUBMISSIONS_BLOB_KEY = 'submissions.json';
 
 export async function loadSubmissions() {
-  const { blobs } = await list();
+  const { blobs } = await list({ prefix: SUBMISSIONS_BLOB_KEY });
   const existing = blobs.find((b) => b.pathname === SUBMISSIONS_BLOB_KEY);
   if (!existing?.url) return [];
   const response = await fetch(existing.url);
