@@ -31,6 +31,15 @@ export default async function handler(req, res) {
     }
   });
 
+  const totalAmount = submissions.reduce((sum, s) => {
+    const sTotal = typeof s.total === 'number'
+      ? s.total
+      : Array.isArray(s.items)
+      ? s.items.reduce((itemSum, item) => itemSum + (parseFloat(item.amount) || 0), 0)
+      : 0;
+    return sum + sTotal;
+  }, 0);
+
   const rowsHtml = submissions
     .map((s, idx) => {
       const total =
@@ -104,7 +113,7 @@ export default async function handler(req, res) {
         <div class="container-fluid">
           <span class="navbar-brand fw-bold">Expense Submissions</span>
           <div class="d-flex align-items-center gap-2">
-            <span class="text-muted">Total: ${submissions.length}</span>
+            <span class="text-muted">Total: $${Number(totalAmount).toFixed(2)}</span>
             <a class="btn btn-outline-secondary btn-sm" href="/logout">Logout</a>
           </div>
         </div>
