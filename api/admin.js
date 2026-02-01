@@ -44,7 +44,9 @@ export default async function handler(req, res) {
         .flatMap((item) => item.receipts || [])
         .map(
           (r) =>
-            `<a class="badge text-bg-secondary text-decoration-none me-1" target="_blank" href="${r.url}">${r.originalName || r.filename || 'receipt'}</a>`
+            `<a class="badge text-bg-secondary text-decoration-none me-1" target="_blank" href="/receipts/${encodeURIComponent(
+              r.filename
+            )}">${r.originalName || r.filename}</a>`
         )
         .join(' ');
 
