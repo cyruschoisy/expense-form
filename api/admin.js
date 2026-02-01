@@ -50,7 +50,7 @@ export default async function handler(req, res) {
     const sTotal = typeof s.total === 'number'
       ? s.total
       : Array.isArray(s.items)
-      ? s.items.reduce((itemSum, item) => {
+      ? s.items.filter(item => item && typeof item === 'object').reduce((itemSum, item) => {
           const amt = parseFloat(item.amount || 0);
           return itemSum + (isNaN(amt) ? 0 : amt);
         }, 0)
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
         typeof s.total === 'number'
           ? s.total
           : Array.isArray(s.items)
-          ? s.items.reduce((sum, item) => {
+          ? s.items.filter(item => item && typeof item === 'object').reduce((sum, item) => {
               const amt = parseFloat(item.amount || 0);
               return sum + (isNaN(amt) ? 0 : amt);
             }, 0)
@@ -118,13 +118,13 @@ export default async function handler(req, res) {
                 </div>
                 <div class="col-md-6">
                   <h6>Expense Items</h6>
-                  ${s.items && s.items.length > 0 ? s.items.map(item => `
+                  ${s.items && Array.isArray(s.items) && s.items.length > 0 ? s.items.filter(item => item && typeof item === 'object').map(item => `
                     <div class="mb-2 p-2 border rounded">
                       <p class="mb-1"><strong>Description:</strong> ${item.description || 'N/A'}</p>
                       <p class="mb-1"><strong>Budget:</strong> ${item.officers || 'N/A'}</p>
                       <p class="mb-1"><strong>Budget Line:</strong> ${item.budgetLine || 'N/A'}</p>
                       <p class="mb-1"><strong>Amount:</strong> $${parseFloat(item.amount || 0).toFixed(2)}</p>
-                      <p class="mb-0"><strong>Receipts:</strong> ${item.receipts && item.receipts.length > 0 ? item.receipts.map(r => `<a class="badge text-bg-secondary text-decoration-none me-1" target="_blank" href="${r.url}">${r.originalName || r.filename}</a>`).join(' ') : '<span class="text-muted">None</span>'}</p>
+                      <p class="mb-0"><strong>Receipts:</strong> ${item.receipts && Array.isArray(item.receipts) && item.receipts.length > 0 ? item.receipts.map(r => `<a class="badge text-bg-secondary text-decoration-none me-1" target="_blank" href="${r.url}">${r.originalName || r.filename}</a>`).join(' ') : '<span class="text-muted">None</span>'}</p>
                     </div>
                   `).join('') : '<p class="text-muted">No items</p>'}
                 </div>
