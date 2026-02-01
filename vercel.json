@@ -1,8 +1,9 @@
 {
-  "routes": [
+  "rewrites": [
     { "source": "/admin", "destination": "/api/admin" },
     { "source": "/login", "destination": "/api/login" },
     { "source": "/logout", "destination": "/api/logout" },
+    { "source": "/submit", "destination": "/api/submit" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
