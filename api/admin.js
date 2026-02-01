@@ -78,7 +78,7 @@ export default async function handler(req, res) {
                   <p><strong>Budget:</strong> ${s.officers || 'N/A'}</p>
                   <p><strong>Date:</strong> ${s.date || 'N/A'}</p>
                   <p><strong>Total:</strong> $${Number(total).toFixed(2)}</p>
-                  <p><strong>Submitted:</strong> ${s.timestamp ? new Date(s.timestamp).toLocaleString() : 'N/A'}</p>
+                  <p><strong>Submitted:</strong> ${s.timestamp ? new Date(s.timestamp).toLocaleString('en-US', { timeZone: 'UTC' }) + ' UTC' : 'N/A'}</p>
                 </div>
                 <div class="col-md-6">
                   <h6>Expense Items</h6>
