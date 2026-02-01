@@ -16,23 +16,44 @@ export default async function handler(req, res) {
     const itemsWithReceipts = await Promise.all(
       items.map(async (item, i) => {
         const receipts = Array.isArray(item.receipts) ? item.receipts : [];
-        const uploaded = await Promise.all(
-          receipts.map(async (r, j) => {
+        const uploaded = [];
+        for (let j = 0; j < receipts.length; j++) {
+          const r = receipts[j];
+          try {
             const base64 = String(r.data || '').split(',')[1] || '';
+            if (!base64) {
+              console.error(`No base64 data for receipt ${j} in item ${i}`);
+              continue;
+            }
+            
             const buffer = Buffer.from(base64, 'base64');
             const filename = `${submissionId}_${i}_${j}_${r.name || 'receipt'}`;
+            
+            console.log(`Uploading receipt ${j} for item ${i}: ${filename}, size: ${buffer.length} bytes`);
+            
             const blob = await put(filename, buffer, {
               access: 'public',
               contentType: r.type || 'application/octet-stream'
             });
-            return {
+            
+            console.log(`Successfully uploaded: ${blob.url}`);
+            
+            uploaded.push({
               originalName: r.name,
               type: r.type,
               url: blob.url,
               pathname: blob.pathname
-            };
-          })
-        );
+            });
+            
+            // Add small delay between uploads to avoid rate limits
+            if (j < receipts.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+          } catch (uploadErr) {
+            console.error(`Failed to upload receipt ${j} for item ${i}:`, uploadErr);
+            // Continue with other receipts instead of failing entire submission
+          }
+        }
 
         return {
           ...item,
