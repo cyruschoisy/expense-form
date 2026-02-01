@@ -20,7 +20,7 @@ function renderLogin(errorCode) {
             <div class="card-body">
               <h4 class="mb-3 text-center">Admin Login</h4>
               <form method="POST">
-                <input type="password" name="password" class="form-control mb-3 my-5" required />
+                <input type="password" name="password" class="form-control my-5" required />
                 <button class="btn btn-primary w-100">Login</button>
               </form>
               ${
