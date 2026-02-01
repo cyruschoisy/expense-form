@@ -84,10 +84,10 @@ export default async function handler(req, res) {
               <div class="row">
                 <div class="col-md-6">
                   <h6>Basic Information</h6>
+                  <hr>
                   <p><strong>Name:</strong> ${s.name || 'N/A'}</p>
                   <p><strong>Email:</strong> ${s.email || 'N/A'}</p>
                   <p><strong>Phone:</strong> ${formatPhone(s.phone)}</p>
-                  <p><strong>Budget:</strong> ${s.officers || 'N/A'}</p>
                   <p><strong>Date:</strong> ${s.date || 'N/A'}</p>
                   <p><strong>Total:</strong> $${Number(total).toFixed(2)}</p>
                   ${s.signature ? `<p><strong>Signature:</strong> ${s.signature}</p>` : ''}
@@ -96,6 +96,7 @@ export default async function handler(req, res) {
                 </div>
                 <div class="col-md-6">
                   <h6>Expense Items</h6>
+                  <hr>
                   ${s.items && Array.isArray(s.items) && s.items.length > 0 ? s.items.filter(item => item && typeof item === 'object').map(item => `
                     <div class="mb-2 p-2 border rounded">
                       <p class="mb-1"><strong>Description:</strong> ${item.description || 'N/A'}</p>
