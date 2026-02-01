@@ -40,6 +40,15 @@ export default async function handler(req, res) {
     return sum + sTotal;
   }, 0);
 
+  const formatPhone = (phone) => {
+    if (!phone) return 'N/A';
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 10) {
+      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    }
+    return phone; // fallback
+  };
+
   const rowsHtml = submissions
     .map((s, idx) => {
       const total =
@@ -74,11 +83,14 @@ export default async function handler(req, res) {
                   <h6>Basic Information</h6>
                   <p><strong>Name:</strong> ${s.name || 'N/A'}</p>
                   <p><strong>Email:</strong> ${s.email || 'N/A'}</p>
-                  <p><strong>Phone:</strong> ${s.phone || 'N/A'}</p>
+                  <p><strong>Phone:</strong> ${formatPhone(s.phone)}</p>
                   <p><strong>Budget:</strong> ${s.officers || 'N/A'}</p>
                   <p><strong>Date:</strong> ${s.date || 'N/A'}</p>
                   <p><strong>Total:</strong> $${Number(total).toFixed(2)}</p>
-                  <p><strong>Submitted:</strong> ${s.timestamp ? new Date(s.timestamp).toLocaleString('en-US', { timeZone: 'UTC' }) + ' UTC' : 'N/A'}</p>
+                  <p><strong>Status:</strong> ${s.signature && s.signatureDate ? '<span class="badge bg-success">Signed & Dated</span>' : '<span class="badge bg-warning">Not Signed</span>'}</p>
+                  ${s.signature ? `<p><strong>Signature:</strong> ${s.signature}</p>` : ''}
+                  ${s.signatureDate ? `<p><strong>Signature Date:</strong> ${s.signatureDate}</p>` : ''}
+                  <p><strong>Submitted:</strong> ${s.timestamp ? new Date(s.timestamp).toLocaleString('en-US', { timeZone: 'America/Toronto' }) + ' Toronto' : 'N/A'}</p>
                 </div>
                 <div class="col-md-6">
                   <h6>Expense Items</h6>
