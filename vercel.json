@@ -2,12 +2,7 @@
   "rewrites": [
     { 
       "source": "/(.*)", 
-      "destination": "/app.jsx" 
-    },
-
-    { 
-      "source": "/login", 
-      "destination": "/server.js" 
+      "destination": "/index.html" 
     }
   ]
 }
