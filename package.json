@@ -12,8 +12,10 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "@vercel/blob": "^0.23.4",
     "body-parser": "^2.2.2",
     "bootstrap": "^5.3.8",
+    "cookie": "^1.0.2",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "jspdf": "^4.0.0",

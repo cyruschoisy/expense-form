@@ -73,7 +73,7 @@ export default function ExpenseReportForm() {
   const API_BASE =
     import.meta.env.VITE_API_BASE ||
     (import.meta.env.DEV ? "http://localhost:3000" : "");
-  const API_URL = `${API_BASE}/submit`;
+  const API_URL = `${API_BASE}/api/submit`;
 
   try {
     const encodedItems = await Promise.all(
