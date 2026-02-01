@@ -1,5 +1,5 @@
 {
-  "name": "expense-form",
+  "name": "ESS Expense Report Form",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,10 +7,16 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node server.js"
   },
   "dependencies": {
+    "body-parser": "^2.2.2",
     "bootstrap": "^5.3.8",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "jspdf": "^4.0.0",
+    "multer": "^2.0.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import jsPDF from "jspdf";
 
 export default function ExpenseReportForm() {
   const [form, setForm] = useState({
@@ -10,6 +11,7 @@ export default function ExpenseReportForm() {
     date: "",
     officers: "",
     signature: "",
+    signatureDate: "",
   });
 
   const [budgetConfirmed, setBudgetConfirmed] = useState(false);
@@ -64,38 +66,75 @@ export default function ExpenseReportForm() {
       reader.onerror = reject;
     });
 
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Expense Report", 20, 20);
+    doc.setFontSize(12);
+    doc.text(`Name: ${form.name}`, 20, 40);
+    doc.text(`Position: ${form.officers}`, 20, 50);
+    doc.text(`Email: ${form.email}`, 20, 60);
+    doc.text(`Phone: ${form.phone}`, 20, 70);
+    doc.text(`Date: ${form.date}`, 20, 80);
+    doc.text(`Signature: ${form.signature}`, 20, 90);
+    doc.text(`Signature Date: ${form.signatureDate}`, 20, 100);
+    doc.text("Expenses:", 20, 120);
+    let y = 130;
+    items.forEach((item, index) => {
+      doc.text(`${index + 1}. Description: ${item.description}`, 20, y);
+      y += 10;
+      doc.text(`   Budget Line: ${item.budgetLine}`, 20, y);
+      y += 10;
+      doc.text(`   Amount: ${item.amount}`, 20, y);
+      y += 10;
+      doc.text(`   Notes: ${item.notes}`, 20, y);
+      y += 10;
+    });
+    doc.text(`Total: ${total}`, 20, y + 10);
+    return doc.output('datauristring').split(',')[1]; // base64
+  };
+
 const submit = async (e) => {
   e.preventDefault();
   const API_URL = "http://localhost:3000/submit";
 
-  const encodedItems = await Promise.all(
-    items.map(async (item) => ({
-      description: item.description,
-      budgetLine: item.budgetLine,
-      amount: item.amount,
-      receipts: await Promise.all(
-        item.receipts.map(async (file) => {
-          const base64 = await toBase64(file);
-          return {
+  try {
+    const encodedItems = await Promise.all(
+      items.map(async (item) => ({
+        description: item.description,
+        budgetLine: item.budgetLine,
+        amount: item.amount,
+        notes: item.notes,
+        receipts: await Promise.all(
+          item.receipts.map(async (file) => ({
             name: file.name,
             type: file.type,
-            data: base64.split(",")[1]
-          };
-        })
-      )
-    }))
-  );
+            data: await toBase64(file)
+          }))
+        )
+      }))
+    );
 
-  await fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      ...form,
-      items: encodedItems,
-      total
-    })
-  });
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ...form,
+        items: encodedItems,
+        total
+      })
+    });
 
-  alert("Expense report submitted with receipts ✅");
+    if (response.ok) {
+      alert("Expense report submitted successfully ✅");
+    } else {
+      alert("Error submitting: " + response.status + " " + response.statusText);
+    }
+  } catch (error) {
+    alert("Error: " + error.message);
+  }
 };
 
 const officers = [
@@ -117,7 +156,11 @@ const officers = [
 
   return (
     <div className="container p-5">
-      <h2>uOttawa Engineering Students Society Reimbursement Form</h2>
+      <div className="container-fluid text-center mb-3">
+        <img src="/ess-banner.png" alt="ESS Logo" style={{ height: "100px" }} className="mb-3"></img>
+        <h1><strong>Reimbursement Form</strong></h1>
+      </div>
+
       <p>To ensure a smooth and efficient process for handling reimbursements at the University of Ottawa's Engineering Student Society (ESS), we have established this Reimbursement Form.</p>
 
       <p>This form has been designed to facilitate the submission and review of expenses incurred while conducting official business on behalf of ESS. We value your dedication and commitment to our mission, and we want to make sure you are promptly and fairly reimbursed for any authorized expenses you may have incurred.</p>
@@ -133,13 +176,13 @@ const officers = [
         <li>Approval Process: Once your reimbursement request is submitted, it will undergo a review and approval process. You will be notified of the status of your request as it progresses.</li>
       </ul>
 
-      <p>Payment Method: <i>Preferred</i></p>
-      <p class="pb-3">We appreciate your dedication to ESS and your commitment to maintaining the highest standards of financial responsibility. If you have any questions or require assistance while completing this form, please do not hesitate to email <a href="mailto:vpfa@uottawaess.ca">vpfa@uottawaess.ca</a>.</p>
+      <p>Payment Method: <i>Direct Deposit (preferred) // E-transfer</i></p>
+      <p className="pb-3">We appreciate your dedication to ESS and your commitment to maintaining the highest standards of financial responsibility. If you have any questions or require assistance while completing this form, please do not hesitate to email <a href="mailto:vpfa@uottawaess.ca">vpfa@uottawaess.ca</a>.</p>
 
-      <hr class="pb-3"></hr>
+      <hr className="pb-3"></hr>
 
       <form onSubmit={submit}>
-        <p class="">Non // Name <br></br>
+        <p className="">Non // Name <br></br>
         <input
           className="form-control"
           required
@@ -193,7 +236,7 @@ const officers = [
           </select>
         </p>
 
-        <h3 class="pt-5">Expenses</h3>
+        <h3 className="pt-5">Expenses</h3>
 
         {items.map((item, i) => (
           <div className="border rounded p-3 mb-3" key={i}>
@@ -282,15 +325,15 @@ const officers = [
         ))}
 
 
-        <a class="btn btn-dark my-2" type="button" onClick={addItem}>
+        <a className="btn btn-dark my-2" type="button" onClick={addItem}>
           + Add Expense
         </a>
 
-        <div class="py-5 text-center border my-3">
-          <h3 class="">Total: ${total.toFixed(2)}</h3>
+        <div className="py-5 text-center border my-3">
+          <h3 className="">Total: ${total.toFixed(2)}</h3>
         </div>
     
-        <div class="col-md-6">
+        <div className="col-md-6">
           <p>Recipient Signature <br></br>
           <input
             className="form-control"
@@ -308,14 +351,16 @@ const officers = [
               className="form-control"
               type="date"
               required
-              value={form.date}
-              onChange={(e) => updateForm("date", e.target.value)}
+              value={form.signatureDate}
+              onChange={(e) =>
+                updateForm("signatureDate", e.target.value)
+              }
             />
           </p>
         </div>
 
-        <div class="mb-3">
-          <div class="form-check" style={{ alignItems: "center", display: "flex" }}>
+        <div className="mb-3">
+          <div className="form-check" style={{ alignItems: "center", display: "flex" }}>
             <input
               className="form-check-input me-3"
               type="checkbox"
@@ -330,8 +375,8 @@ const officers = [
           </div>
         </div>
 
-        <div class="mb-3">
-          <div class="form-check" style={{ alignItems: "center", display: "flex" }}>
+        <div className="mb-3">
+          <div className="form-check" style={{ alignItems: "center", display: "flex" }}>
             <input
               className="form-check-input me-3"
               type="checkbox"
@@ -346,8 +391,8 @@ const officers = [
           </div>
         </div>
 
-        <div class="text-center">
-          <a class="btn btn-dark my-2" type="submit" disabled={!budgetConfirmed || !truthConfirmed}>Submit Expense Report</a>
+        <div className="text-center">
+          <button className="btn btn-dark my-2" type="submit" disabled={!budgetConfirmed || !truthConfirmed}>Submit Expense Report</button>
         </div>
       </form>
     </div>
