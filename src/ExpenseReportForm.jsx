@@ -1,6 +1,5 @@
 import { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import jsPDF from "jspdf";
 
 export default function ExpenseReportForm() {
   const today = new Date().toLocaleDateString('en-CA');

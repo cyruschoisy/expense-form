@@ -1,7 +1,6 @@
 import express from 'express';
 import session from 'express-session';
 import bodyParser from 'body-parser';
-import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
