@@ -4,10 +4,17 @@ import bodyParser from 'body-parser';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Generate a secure session secret
+const SESSION_SECRET = crypto.randomBytes(64).toString('hex');
+
+// Hash the admin password - REPLACE THIS WITH YOUR NEW HASH
+const ADMIN_PASSWORD_HASH = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9';
 
 const app = express();
 const PORT = 3000;
@@ -28,16 +35,21 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 app.use(session({
-  secret: 'your-secret-key', // Change this to a secure key
+  secret: SESSION_SECRET,
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // Set to true if using HTTPS
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
 }));
 
 // Serve static files from React build
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Password for admin access
-const ADMIN_PASSWORD = 'admin123'; // Change this to your desired password
+// // Password for admin access
+// const ADMIN_PASSWORD = 'admin123'; // Change this to your desired password
 
 // Data storage file
 const DATA_FILE = path.join(__dirname, 'submissions.json');
@@ -68,9 +80,15 @@ function writeSubmissions(data) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
-// Middleware to check if logged in
+// Middleware to check if logged in with session timeout
 function requireAuth(req, res, next) {
   if (req.session.loggedIn) {
+    // Check for session timeout (24 hours)
+    const sessionAge = Date.now() - (req.session.loginTime || 0);
+    if (sessionAge > 24 * 60 * 60 * 1000) {
+      req.session.destroy();
+      return res.redirect('/login?error=2'); // Session expired
+    }
     next();
   } else {
     res.redirect('/login');
@@ -97,7 +115,8 @@ app.get('/login', (req, res) => {
             </div>
             <button type="submit" class="btn btn-primary w-100">Login</button>
           </form>
-          ${req.query.error ? '<div class="alert alert-danger mt-3">Invalid password</div>' : ''}
+          ${req.query.error === '1' ? '<div class="alert alert-danger mt-3">Invalid password</div>' :
+            req.query.error === '2' ? '<div class="alert alert-warning mt-3">Session expired. Please login again.</div>' : ''}
         </div>
       </div>
     </body>
@@ -106,10 +125,15 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', (req, res) => {
-  if (req.body.password === ADMIN_PASSWORD) {
+  const passwordString = String(req.body.password || '');
+  const hashedInput = crypto.createHash('sha256').update(passwordString).digest('hex');
+
+  if (hashedInput === ADMIN_PASSWORD_HASH) {
     req.session.loggedIn = true;
+    req.session.loginTime = Date.now();
     res.redirect('/admin');
   } else {
+    // Log failed attempt (optional)
     res.redirect('/login?error=1');
   }
 });
@@ -407,10 +431,26 @@ app.get('/admin', requireAuth, (req, res) => {
                       reader.readAsDataURL(blob);
                     });
                     
+                    // Get image dimensions while preserving aspect ratio
+                    const img = new Image();
+                    await new Promise((resolve) => {
+                      img.onload = resolve;
+                      img.src = base64;
+                    });
+                    
+                    const maxWidth = 150;
+                    const aspectRatio = img.width / img.height;
+                    let imgWidth = Math.min(img.width, maxWidth);
+                    let imgHeight = imgWidth / aspectRatio;
+                    
+                    // If height is too tall, scale down further
+                    if (imgHeight > 200) {
+                      imgHeight = 200;
+                      imgWidth = imgHeight * aspectRatio;
+                    }
+                    
                     // Add image to PDF
                     const imgData = base64;
-                    const imgWidth = 150;
-                    const imgHeight = 100;
                     
                     if (y + imgHeight > 270) {
                       doc.addPage();

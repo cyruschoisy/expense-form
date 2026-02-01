@@ -88,5 +88,33 @@
       }
     ],
     "total": 33
+  },
+  {
+    "id": "1769911694987",
+    "timestamp": "2026-02-01T02:08:15.000Z",
+    "name": "cc",
+    "position": "",
+    "email": "cyruschoi2k@gmail.com",
+    "phone": "4372291133",
+    "date": "2026-01-31",
+    "officers": "VP Social",
+    "signature": "cc",
+    "signatureDate": "2026-01-31",
+    "items": [
+      {
+        "description": "cc",
+        "budgetLine": "cc",
+        "amount": "33",
+        "notes": "33",
+        "receipts": [
+          {
+            "originalName": "resume2026.pdf",
+            "filename": "1769911694987_0_0_resume2026.pdf",
+            "type": "application/pdf"
+          }
+        ]
+      }
+    ],
+    "total": 33
   }
 ]

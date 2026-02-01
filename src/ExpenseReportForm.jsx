@@ -3,6 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
 
 export default function ExpenseReportForm() {
+  const today = new Date().toLocaleDateString('en-CA');
   const [form, setForm] = useState({
     name: "",
     position: "",
@@ -11,7 +12,7 @@ export default function ExpenseReportForm() {
     date: "",
     officers: "",
     signature: "",
-    signatureDate: "",
+    signatureDate: today,
   });
 
   const [budgetConfirmed, setBudgetConfirmed] = useState(false);
@@ -176,7 +177,7 @@ const officers = [
         <li>Approval Process: Once your reimbursement request is submitted, it will undergo a review and approval process. You will be notified of the status of your request as it progresses.</li>
       </ul>
 
-      <p>Payment Method: <i>Direct Deposit (preferred) // E-transfer</i></p>
+      <p><strong>Payment Method:</strong> <i>Direct Deposit (preferred) // E-transfer</i></p>
       <p className="pb-3">We appreciate your dedication to ESS and your commitment to maintaining the highest standards of financial responsibility. If you have any questions or require assistance while completing this form, please do not hesitate to email <a href="mailto:vpfa@uottawaess.ca">vpfa@uottawaess.ca</a>.</p>
 
       <hr className="pb-3"></hr>
@@ -194,16 +195,18 @@ const officers = [
         <p>Email<br></br>
         <input
           className="form-control"
+          type="email"
           required
           value={form.email}
           onChange={(e) => updateForm("email", e.target.value)}
         />
         </p>
 
-        <p>Phone Number<br></br>
+        <p>Phone Number (e.g., 6131234567)<br></br>
         <input
           className="form-control"
           type="tel"
+          pattern="^\d{10}$"
           required
           value={form.phone}
           onChange={(e) => updateForm("phone", e.target.value)}
@@ -214,6 +217,7 @@ const officers = [
           <input
             className="form-control"
             type="date"
+            max={new Date().toLocaleDateString('en-CA')}
             required
             value={form.date}
             onChange={(e) => updateForm("date", e.target.value)}
@@ -285,7 +289,8 @@ const officers = [
                   type="file"
                   className="form-control"
                   accept="image/*"
-                  multiple
+                  multiple 
+                  max="1"
                   onChange={(e) => updateReceipts(i, e.target.files)}
                 />
               </div>
@@ -351,10 +356,8 @@ const officers = [
               className="form-control"
               type="date"
               required
+              readOnly
               value={form.signatureDate}
-              onChange={(e) =>
-                updateForm("signatureDate", e.target.value)
-              }
             />
           </p>
         </div>
