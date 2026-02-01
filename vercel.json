@@ -3,7 +3,7 @@
     { "src": "/admin", "dest": "/api/admin" },
     { "src": "/login", "dest": "/api/login" },
     { "src": "/logout", "dest": "/api/logout" },
-    { "src": "/submit", "dest": "/api/submit" },
+    { "src": "/submit", "dest": "/api/submit", "methods": ["POST"] },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

@@ -1,9 +1,7 @@
 import crypto from 'crypto';
 import { parseFormBody, setCookie } from './_utils.js';
 
-const ADMIN_PASSWORD_HASH =
-  process.env.ADMIN_PASSWORD_HASH ||
-  '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9';
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
 
 function renderLogin(errorCode) {
   return `
