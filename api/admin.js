@@ -7,23 +7,15 @@ export default async function handler(req, res) {
     return res.end();
   }
 
-  const query = req.url.split('?')[1] || '';
-  const params = new URLSearchParams(query);
-  const sortBy = params.get('sort') || 'recent';
+  let submissions = [];
+  try {
+    submissions = await loadSubmissions();
+  } catch (err) {
+    console.error('Failed to load submissions:', err);
+    // Continue with empty array
+  }
 
-  let submissions = await loadSubmissions();
-
-  submissions = submissions.sort((a, b) => {
-    switch (sortBy) {
-      case 'name':
-        return (a.name || '').localeCompare(b.name || '');
-      case 'date':
-        return new Date(b.date || 0) - new Date(a.date || 0);
-      case 'recent':
-      default:
-        return new Date(b.timestamp || 0) - new Date(a.timestamp || 0);
-    }
-  });
+  submissions = submissions.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
 
   const rowsHtml = submissions
     .map((s, idx) => {
