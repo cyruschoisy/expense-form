@@ -17,18 +17,42 @@ export async function parseJsonBody(req) {
 }
 
 export async function parseFormBody(req) {
+  const contentType = req.headers['content-type'] || '';
   const chunks = [];
   for await (const chunk of req) {
     chunks.push(chunk);
   }
   const raw = Buffer.concat(chunks).toString('utf8');
   if (!raw) return {};
-  const params = new URLSearchParams(raw);
-  const result = {};
-  for (const [key, value] of params) {
-    result[key] = value;
+
+  if (contentType.includes('application/x-www-form-urlencoded')) {
+    const params = new URLSearchParams(raw);
+    const result = {};
+    for (const [key, value] of params) {
+      result[key] = value;
+    }
+    return result;
+  } else if (contentType.includes('multipart/form-data')) {
+    // Simple multipart parser for form data
+    const boundary = contentType.split('boundary=')[1];
+    if (!boundary) return {};
+    const parts = raw.split(`--${boundary}`);
+    const result = {};
+    for (const part of parts) {
+      if (part.trim() && !part.includes('--')) {
+        const lines = part.split('\r\n');
+        const nameMatch = lines[1]?.match(/name="([^"]+)"/);
+        if (nameMatch) {
+          const name = nameMatch[1];
+          const value = lines.slice(3).join('\r\n').trim();
+          result[name] = value;
+        }
+      }
+    }
+    return result;
   }
-  return result;
+
+  return {};
 }
 
 export function getCookies(req) {
