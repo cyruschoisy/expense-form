@@ -192,7 +192,7 @@ export default async function handler(req, res) {
                       <p class="mb-1"><strong>Budget:</strong> ${item.officers || 'N/A'}</p>
                       <p class="mb-1"><strong>Budget Line:</strong> ${item.budgetLine || 'N/A'}</p>
                       <p class="mb-1"><strong>Amount:</strong> $${parseFloat(item.amount || 0).toFixed(2)}</p>
-                      <p class="mb-0"><strong>Receipts:</strong> ${(item.receipts || []).map(r => `<a class="badge text-bg-secondary text-decoration-none me-1" target="_blank" href="${r.url}">${r.originalName}</a>`).join(' ') || '<span class="text-muted">None</span>'}</p>
+                      <p class="mb-0"><strong>Receipts:</strong> ${(item.receipts || []).map(r => '<a class="badge text-bg-secondary text-decoration-none me-1" target="_blank" href="' + r.url + '">' + r.originalName + '</a>').join(' ') || '<span class="text-muted">None</span>'}</p>
                     </div>
                   `).join('') : '<p class="text-muted">No items</p>'}
                 </div>
