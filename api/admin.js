@@ -7,15 +7,7 @@ export default async function handler(req, res) {
     return res.end();
   }
 
-  let submissions = [];
-  try {
-    submissions = await loadSubmissions();
-  } catch (err) {
-    console.error('Failed to load submissions:', err);
-    // Continue with empty array
-  }
-
-  submissions = submissions.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+  const submissions = (await loadSubmissions()).sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
 
   const rowsHtml = submissions
     .map((s, idx) => {
