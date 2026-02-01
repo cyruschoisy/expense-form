@@ -31,6 +31,9 @@ export default async function handler(req, res) {
     // Continue with empty array
   }
 
+  // Filter out invalid submissions
+  submissions = submissions.filter(s => s && typeof s === 'object' && s.id);
+
   submissions = submissions.sort((a, b) => {
     switch (sortBy) {
       case 'name':
@@ -47,7 +50,10 @@ export default async function handler(req, res) {
     const sTotal = typeof s.total === 'number'
       ? s.total
       : Array.isArray(s.items)
-      ? s.items.reduce((itemSum, item) => itemSum + (parseFloat(item.amount) || 0), 0)
+      ? s.items.reduce((itemSum, item) => {
+          const amt = parseFloat(item.amount || 0);
+          return itemSum + (isNaN(amt) ? 0 : amt);
+        }, 0)
       : 0;
     return sum + sTotal;
   }, 0);
@@ -67,7 +73,10 @@ export default async function handler(req, res) {
         typeof s.total === 'number'
           ? s.total
           : Array.isArray(s.items)
-          ? s.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0)
+          ? s.items.reduce((sum, item) => {
+              const amt = parseFloat(item.amount || 0);
+              return sum + (isNaN(amt) ? 0 : amt);
+            }, 0)
           : 0;
 
       const receipts = (s.items || [])
