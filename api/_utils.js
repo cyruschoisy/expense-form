@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { list, put } from '@vercel/blob';
 import { parse as parseCookie, serialize as serializeCookie } from 'cookie';
+import fs from 'fs/promises';
 
 export async function parseJsonBody(req) {
   const chunks = [];
@@ -130,8 +131,19 @@ export async function loadSubmissions() {
 }
 
 export async function saveSubmissions(submissions) {
-  await put(SUBMISSIONS_BLOB_KEY, JSON.stringify(submissions, null, 2), {
-    access: 'public',
-    contentType: 'application/json'
-  });
+  try {
+    await put(SUBMISSIONS_BLOB_KEY, JSON.stringify(submissions, null, 2), {
+      access: 'public',
+      contentType: 'application/json'
+    });
+  } catch (err) {
+    console.log('Blob storage not available, saving to local file');
+  }
+  
+  // Also save to local file for development
+  try {
+    await fs.writeFile('./submissions.json', JSON.stringify(submissions, null, 2));
+  } catch (err) {
+    console.error('Failed to save submissions to local file:', err);
+  }
 }
