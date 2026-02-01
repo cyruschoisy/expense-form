@@ -16,22 +16,20 @@ function renderLogin(errorCode) {
     <body class="bg-light">
       <div class="container-fluid p-5">
         <div class="row justify-content-center">
-          <div class="col-md-4">
-            <div class="card shadow-sm">
-              <div class="card-body">
-                <h4 class="mb-3 text-center">Admin Login</h4>
-                <form method="POST">
-                  <input type="password" name="password" class="form-control mb-3" required />
-                  <button class="btn btn-primary w-100">Login</button>
-                </form>
-                ${
-                  errorCode === '1'
-                    ? '<div class="alert alert-danger mt-3">Invalid password</div>'
-                    : errorCode === '2'
-                    ? '<div class="alert alert-warning mt-3">Session expired</div>'
-                    : ''
-                }
-              </div>
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h4 class="mb-3 text-center">Admin Login</h4>
+              <form method="POST">
+                <input type="password" name="password" class="form-control mb-3" required />
+                <button class="btn btn-primary w-100">Login</button>
+              </form>
+              ${
+                errorCode === '1'
+                  ? '<div class="alert alert-danger mt-3">Invalid password</div>'
+                  : errorCode === '2'
+                  ? '<div class="alert alert-warning mt-3">Session expired</div>'
+                  : ''
+              }
             </div>
           </div>
         </div>
