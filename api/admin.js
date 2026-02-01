@@ -1,22 +1,10 @@
-import { loadSubmissions, requireAdmin, saveSubmissions, parseFormBody } from './_utils.js';
+import { loadSubmissions, requireAdmin, saveSubmissions } from './_utils.js';
 
 export default async function handler(req, res) {
   if (!requireAdmin(req, res)) {
     res.statusCode = 302;
     res.setHeader('Location', '/login?error=2');
     return res.end();
-  }
-
-  if (req.method === 'POST') {
-    const body = await parseFormBody(req);
-    if (body.action === 'delete' && body.id) {
-      let submissions = await loadSubmissions();
-      submissions = submissions.filter(s => s.id !== body.id);
-      await saveSubmissions(submissions);
-      res.writeHead(302, { Location: '/api/admin' });
-      res.end();
-      return;
-    }
   }
 
   const query = req.url.split('?')[1] || '';
@@ -112,11 +100,6 @@ export default async function handler(req, res) {
                   ${s.signature ? `<p><strong>Signature:</strong> ${s.signature}</p>` : ''}
                   ${s.signatureDate ? `<p><strong>Signature Date:</strong> ${s.signatureDate}</p>` : ''}
                   <p><strong>Submitted:</strong> ${s.timestamp ? new Date(s.timestamp).toLocaleString('en-US', { timeZone: 'America/Toronto' }) + ' Toronto' : 'N/A'}</p>
-                  <form method="POST" style="display: inline;">
-                    <input type="hidden" name="action" value="delete">
-                    <input type="hidden" name="id" value="${s.id}">
-                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this submission?')">Delete</button>
-                  </form>
                 </div>
                 <div class="col-md-6">
                   <h6>Expense Items</h6>
