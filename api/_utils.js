@@ -118,74 +118,117 @@ export function requireAdmin(req, res) {
   return true;
 }
 
-const SUBMISSIONS_BLOB_KEY = 'submissions.json';
+const SUBMISSIONS_INDEX_KEY = 'submissions-index.json';
 
 export async function loadSubmissions() {
   try {
-    console.log('Listing blobs...');
+    console.log('Loading submissions index...');
     const { blobs } = await list();
-    console.log('Found', blobs.length, 'blobs total');
-    blobs.forEach(b => console.log('Blob:', b.pathname));
-    
-    const existing = blobs.find((b) => b.pathname === SUBMISSIONS_BLOB_KEY);
-    if (!existing) {
-      console.log('No submissions blob found');
+
+    // Find the index file
+    const indexBlob = blobs.find((b) => b.pathname === SUBMISSIONS_INDEX_KEY);
+    if (!indexBlob) {
+      console.log('No submissions index found');
       return [];
     }
-    
-    console.log('Found submissions blob:', existing.pathname, 'url:', existing.url);
-    
-    // Use downloadUrl if available, otherwise use url
-    const fetchUrl = existing.downloadUrl || existing.url;
-    const url = fetchUrl + '?t=' + Date.now();
-    
-    console.log('Fetching from:', url);
-    
-    const response = await fetch(url, {
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache'
+
+    // Load the index
+    const indexResponse = await fetch(indexBlob.downloadUrl || indexBlob.url);
+    if (!indexResponse.ok) {
+      console.error('Failed to fetch submissions index');
+      return [];
+    }
+
+    const index = await indexResponse.json();
+    if (!Array.isArray(index.submissionIds)) {
+      console.error('Invalid submissions index format');
+      return [];
+    }
+
+    console.log(`Loading ${index.submissionIds.length} submissions...`);
+
+    // Load each submission
+    const submissions = [];
+    for (const submissionId of index.submissionIds) {
+      try {
+        const submissionBlob = blobs.find((b) => b.pathname === `submission-${submissionId}.json`);
+        if (submissionBlob) {
+          const response = await fetch(submissionBlob.downloadUrl || submissionBlob.url);
+          if (response.ok) {
+            const submission = await response.json();
+            submissions.push(submission);
+          }
+        }
+      } catch (err) {
+        console.error(`Failed to load submission ${submissionId}:`, err);
       }
-    });
-    
-    if (!response.ok) {
-      console.error('Failed to fetch submissions:', response.status, response.statusText);
-      const text = await response.text();
-      console.error('Response body:', text);
-      return [];
     }
-    
-    const data = await response.json();
-    console.log('Loaded submissions:', data.length);
-    return Array.isArray(data) ? data : [];
+
+    console.log(`Successfully loaded ${submissions.length} submissions`);
+    return submissions;
   } catch (err) {
     console.error('Error loading submissions:', err);
     return [];
   }
 }
 
-export async function saveSubmissions(submissions) {
+export async function saveSubmission(submission) {
   try {
-    const jsonString = JSON.stringify(submissions, null, 2);
-    console.log('Saving submissions, count:', submissions.length, 'size:', jsonString.length);
-    
-    const result = await put(SUBMISSIONS_BLOB_KEY, jsonString, {
+    const submissionId = submission.id;
+    console.log('Saving single submission:', submissionId);
+
+    // Save the submission
+    await put(`submission-${submissionId}.json`, JSON.stringify(submission, null, 2), {
       access: 'public',
       contentType: 'application/json'
     });
-    
-    console.log('Successfully saved to blob:', result.url);
+
+    // Update the index by adding this submission ID
+    await updateSubmissionsIndex(submissionId);
+
+    console.log('Successfully saved submission:', submissionId);
   } catch (err) {
-    console.error('Blob storage error:', err);
-    throw err; // Re-throw so submit.js knows it failed
+    console.error('Error saving submission:', err);
+    throw err;
   }
-  
-  // Also save to local file for development
+}
+
+async function updateSubmissionsIndex(newSubmissionId) {
   try {
-    await fs.writeFile('./submissions.json', JSON.stringify(submissions, null, 2));
-    console.log('Also saved to local file');
+    const { blobs } = await list();
+    const indexBlob = blobs.find((b) => b.pathname === SUBMISSIONS_INDEX_KEY);
+    
+    let submissionIds = [];
+    if (indexBlob) {
+      try {
+        const indexResponse = await fetch(indexBlob.downloadUrl || indexBlob.url);
+        if (indexResponse.ok) {
+          const index = await indexResponse.json();
+          submissionIds = Array.isArray(index.submissionIds) ? index.submissionIds : [];
+        }
+      } catch (err) {
+        console.error('Failed to load current index, starting fresh:', err);
+      }
+    }
+
+    // Add the new submission ID if not already present
+    if (!submissionIds.includes(newSubmissionId)) {
+      submissionIds.push(newSubmissionId);
+      console.log('Added new submission ID to index:', newSubmissionId);
+    } else {
+      console.log('Submission ID already in index:', newSubmissionId);
+    }
+
+    // Update index
+    const newIndex = { submissionIds, lastUpdated: new Date().toISOString() };
+    await put(SUBMISSIONS_INDEX_KEY, JSON.stringify(newIndex, null, 2), {
+      access: 'public',
+      contentType: 'application/json'
+    });
+
+    console.log('Updated index, now contains', submissionIds.length, 'submissions');
   } catch (err) {
-    // Local file write is optional, don't fail if it errors
-    console.error('Failed to save submissions to local file:', err);
+    console.error('Error updating submissions index:', err);
+    throw err;
   }
 }
