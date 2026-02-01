@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
+import { Pool } from 'pg';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -94,6 +95,15 @@ function requireAuth(req, res, next) {
     res.redirect('/login');
   }
 }
+
+// PostgreSQL connection setup
+const pool = new Pool({
+  user: 'postgres',
+  host: 'localhost',
+  database: 'postgresql://postgres:YNBShaaoDlPpePNzVgKQdycFmTEDBVYM@postgres.railway.internal:5432/railway',
+  password: 'YNBShaaoDlPpePNzVgKQdycFmTEDBVYM',
+  port: 5432,
+});
 
 // Routes
 app.get('/login', (req, res) => {
@@ -536,6 +546,17 @@ app.post('/submit', (req, res) => {
   } catch (error) {
     console.error('Submission error:', error);
     res.status(500).json({ error: 'Failed to save submission' });
+  }
+});
+
+// Example API endpoint
+app.get('/api/expenses', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM expenses');
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
   }
 });
 
