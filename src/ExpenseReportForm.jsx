@@ -261,9 +261,12 @@ const officers = [
                   className="form-control"
                   required
                   value={item.amount}
-                  onChange={(e) =>
-                    updateItem(i, "amount", e.target.value)
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (/^\d*\.?\d{0,2}$/.test(value) || value === '') {
+                      updateItem(i, "amount", value);
+                    }
+                  }}
                 />
               </div>
 
