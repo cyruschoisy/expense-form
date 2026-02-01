@@ -85,10 +85,9 @@ export default async function handler(req, res) {
           <td>${s.date || ''}</td>
           <td>${s.name || ''}</td>
           <td>$${Number(total).toFixed(2)}</td>
-          <td>${s.officers || ''}</td>
         </tr>
         <tr class="collapse" id="details-${idx}">
-          <td colspan="4">
+          <td colspan="3">
             <div class="p-3 bg-light rounded">
               <div class="row">
                 <div class="col-md-6">
@@ -174,11 +173,10 @@ export default async function handler(req, res) {
                     <th>Date</th>
                     <th>Name</th>
                     <th>Total</th>
-                    <th>Budget</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${rowsHtml || '<tr><td colspan="4" class="text-center text-muted">No submissions yet</td></tr>'}
+                  ${rowsHtml || '<tr><td colspan="3" class="text-center text-muted">No submissions yet</td></tr>'}
                 </tbody>
               </table>
             </div>
