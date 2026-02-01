@@ -97,7 +97,7 @@ export default function ExpenseReportForm() {
 
 const submit = async (e) => {
   e.preventDefault();
-  const API_URL = "http://localhost:3000/submit";
+  const API_URL = "/submit";
 
   try {
     const encodedItems = await Promise.all(
