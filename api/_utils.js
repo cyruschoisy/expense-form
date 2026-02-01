@@ -154,18 +154,24 @@ export async function loadSubmissions() {
 
 export async function saveSubmissions(submissions) {
   try {
-    await put(SUBMISSIONS_BLOB_KEY, JSON.stringify(submissions, null, 2), {
+    const jsonString = JSON.stringify(submissions, null, 2);
+    console.log('Saving submissions, count:', submissions.length, 'size:', jsonString.length);
+    
+    await put(SUBMISSIONS_BLOB_KEY, jsonString, {
       access: 'public',
       contentType: 'application/json'
     });
+    console.log('Successfully saved to blob');
   } catch (err) {
-    console.log('Blob storage not available, saving to local file');
+    console.error('Blob storage error:', err);
+    throw err; // Re-throw so submit.js knows it failed
   }
   
   // Also save to local file for development
   try {
     await fs.writeFile('./submissions.json', JSON.stringify(submissions, null, 2));
   } catch (err) {
+    // Local file write is optional, don't fail if it errors
     console.error('Failed to save submissions to local file:', err);
   }
 }
