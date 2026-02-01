@@ -122,15 +122,25 @@ const SUBMISSIONS_BLOB_KEY = 'submissions.json';
 
 export async function loadSubmissions() {
   try {
+    console.log('Listing blobs...');
     const { blobs } = await list();
+    console.log('Found', blobs.length, 'blobs total');
+    blobs.forEach(b => console.log('Blob:', b.pathname));
+    
     const existing = blobs.find((b) => b.pathname === SUBMISSIONS_BLOB_KEY);
-    if (!existing?.url) {
+    if (!existing) {
       console.log('No submissions blob found');
       return [];
     }
     
-    // Add cache busting to ensure fresh data
-    const url = existing.url + '?t=' + Date.now();
+    console.log('Found submissions blob:', existing.pathname, 'url:', existing.url);
+    
+    // Use downloadUrl if available, otherwise use url
+    const fetchUrl = existing.downloadUrl || existing.url;
+    const url = fetchUrl + '?t=' + Date.now();
+    
+    console.log('Fetching from:', url);
+    
     const response = await fetch(url, {
       cache: 'no-store',
       headers: {
@@ -139,7 +149,9 @@ export async function loadSubmissions() {
     });
     
     if (!response.ok) {
-      console.error('Failed to fetch submissions:', response.status);
+      console.error('Failed to fetch submissions:', response.status, response.statusText);
+      const text = await response.text();
+      console.error('Response body:', text);
       return [];
     }
     
@@ -157,11 +169,12 @@ export async function saveSubmissions(submissions) {
     const jsonString = JSON.stringify(submissions, null, 2);
     console.log('Saving submissions, count:', submissions.length, 'size:', jsonString.length);
     
-    await put(SUBMISSIONS_BLOB_KEY, jsonString, {
+    const result = await put(SUBMISSIONS_BLOB_KEY, jsonString, {
       access: 'public',
       contentType: 'application/json'
     });
-    console.log('Successfully saved to blob');
+    
+    console.log('Successfully saved to blob:', result.url);
   } catch (err) {
     console.error('Blob storage error:', err);
     throw err; // Re-throw so submit.js knows it failed
@@ -170,6 +183,7 @@ export async function saveSubmissions(submissions) {
   // Also save to local file for development
   try {
     await fs.writeFile('./submissions.json', JSON.stringify(submissions, null, 2));
+    console.log('Also saved to local file');
   } catch (err) {
     // Local file write is optional, don't fail if it errors
     console.error('Failed to save submissions to local file:', err);

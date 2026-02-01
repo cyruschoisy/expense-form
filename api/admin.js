@@ -14,6 +14,7 @@ export default async function handler(req, res) {
   let submissions = [];
   try {
     submissions = await loadSubmissions();
+    console.log('Admin page: loaded', submissions.length, 'submissions');
   } catch (err) {
     console.error('Failed to load submissions:', err);
     // Continue with empty array
