@@ -224,18 +224,6 @@ const officers = [
               </div>
 
               <div className="col-md-2">
-                Budget Line <br></br>
-                <input
-                  className="form-control"
-                  required
-                  value={item.budgetLine}
-                  onChange={(e) =>
-                    updateItem(i, "budgetLine", e.target.value)
-                  }
-                />
-              </div>
-
-              <div className="col-md-2">
                 Budget <br></br>
                 <select
                   className="form-control"
@@ -252,6 +240,18 @@ const officers = [
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="col-md-2">
+                Budget Line <br></br>
+                <input
+                  className="form-control"
+                  required
+                  value={item.budgetLine}
+                  onChange={(e) =>
+                    updateItem(i, "budgetLine", e.target.value)
+                  }
+                />
               </div>
 
               <div className="col-md-2">

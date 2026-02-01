@@ -1,10 +1,22 @@
-import { loadSubmissions, requireAdmin } from './_utils.js';
+import { loadSubmissions, requireAdmin, saveSubmissions, parseFormBody } from './_utils.js';
 
 export default async function handler(req, res) {
   if (!requireAdmin(req, res)) {
     res.statusCode = 302;
     res.setHeader('Location', '/login?error=2');
     return res.end();
+  }
+
+  if (req.method === 'POST') {
+    const body = await parseFormBody(req);
+    if (body.action === 'delete' && body.id) {
+      let submissions = await loadSubmissions();
+      submissions = submissions.filter(s => s.id !== body.id);
+      await saveSubmissions(submissions);
+      res.writeHead(302, { Location: '/api/admin' });
+      res.end();
+      return;
+    }
   }
 
   const query = req.url.split('?')[1] || '';
@@ -90,14 +102,19 @@ export default async function handler(req, res) {
                   ${s.signature ? `<p><strong>Signature:</strong> ${s.signature}</p>` : ''}
                   ${s.signatureDate ? `<p><strong>Signature Date:</strong> ${s.signatureDate}</p>` : ''}
                   <p><strong>Submitted:</strong> ${s.timestamp ? new Date(s.timestamp).toLocaleString('en-US', { timeZone: 'America/Toronto' }) + ' Toronto' : 'N/A'}</p>
+                  <form method="POST" style="display: inline;">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="id" value="${s.id}">
+                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this submission?')">Delete</button>
+                  </form>
                 </div>
                 <div class="col-md-6">
                   <h6>Expense Items</h6>
                   ${s.items && s.items.length > 0 ? s.items.map(item => `
                     <div class="mb-2 p-2 border rounded">
                       <p class="mb-1"><strong>Description:</strong> ${item.description || 'N/A'}</p>
-                      <p class="mb-1"><strong>Budget Line:</strong> ${item.budgetLine || 'N/A'}</p>
                       <p class="mb-1"><strong>Budget:</strong> ${item.officers || 'N/A'}</p>
+                      <p class="mb-1"><strong>Budget Line:</strong> ${item.budgetLine || 'N/A'}</p>
                       <p class="mb-1"><strong>Amount:</strong> $${parseFloat(item.amount || 0).toFixed(2)}</p>
                       <p class="mb-0"><strong>Receipts:</strong> ${item.receipts && item.receipts.length > 0 ? item.receipts.map(r => `<a class="badge text-bg-secondary text-decoration-none me-1" target="_blank" href="${r.url}">${r.originalName || r.filename}</a>`).join(' ') : '<span class="text-muted">None</span>'}</p>
                     </div>
