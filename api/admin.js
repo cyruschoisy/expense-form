@@ -50,12 +50,13 @@ export default async function handler(req, res) {
 
       return `
         <tr>
-          <td>${s.date || ''}</td>
-          <td>${s.officers || ''}</td>
-          <td>$${Number(total).toFixed(2)}</td>
+          <td>${idx + 1}</td>
           <td>${s.name || ''}</td>
           <td>${s.email || ''}</td>
           <td>${s.phone || ''}</td>
+          <td>${s.officers || ''}</td>
+          <td>${s.date || ''}</td>
+          <td>$${Number(total).toFixed(2)}</td>
           <td>${s.timestamp ? new Date(s.timestamp).toLocaleString() : ''}</td>
           <td>${receipts || '<span class="text-muted">None</span>'}</td>
           <td>
