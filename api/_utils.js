@@ -121,13 +121,35 @@ export function requireAdmin(req, res) {
 const SUBMISSIONS_BLOB_KEY = 'submissions.json';
 
 export async function loadSubmissions() {
-  const { blobs } = await list();
-  const existing = blobs.find((b) => b.pathname === SUBMISSIONS_BLOB_KEY);
-  if (!existing?.url) return [];
-  const response = await fetch(existing.url);
-  if (!response.ok) return [];
-  const data = await response.json();
-  return Array.isArray(data) ? data : [];
+  try {
+    const { blobs } = await list();
+    const existing = blobs.find((b) => b.pathname === SUBMISSIONS_BLOB_KEY);
+    if (!existing?.url) {
+      console.log('No submissions blob found');
+      return [];
+    }
+    
+    // Add cache busting to ensure fresh data
+    const url = existing.url + '?t=' + Date.now();
+    const response = await fetch(url, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error('Failed to fetch submissions:', response.status);
+      return [];
+    }
+    
+    const data = await response.json();
+    console.log('Loaded submissions:', data.length);
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.error('Error loading submissions:', err);
+    return [];
+  }
 }
 
 export async function saveSubmissions(submissions) {
