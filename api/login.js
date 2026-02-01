@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { parseJsonBody, setCookie } from './_utils.js';
+import { parseFormBody, setCookie } from './_utils.js';
 
 const ADMIN_PASSWORD_HASH =
   process.env.ADMIN_PASSWORD_HASH ||
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
     return res.end('Method Not Allowed');
   }
 
-  const body = await parseJsonBody(req);
+  const body = await parseFormBody(req);
   const hash = crypto
     .createHash('sha256')
     .update(String(body.password || ''))

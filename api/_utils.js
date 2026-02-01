@@ -16,6 +16,21 @@ export async function parseJsonBody(req) {
   }
 }
 
+export async function parseFormBody(req) {
+  const chunks = [];
+  for await (const chunk of req) {
+    chunks.push(chunk);
+  }
+  const raw = Buffer.concat(chunks).toString('utf8');
+  if (!raw) return {};
+  const params = new URLSearchParams(raw);
+  const result = {};
+  for (const [key, value] of params) {
+    result[key] = value;
+  }
+  return result;
+}
+
 export function getCookies(req) {
   return parseCookie(req.headers.cookie || '');
 }
