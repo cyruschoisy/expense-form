@@ -51,22 +51,13 @@ export default async function handler(req, res) {
         .join(' ');
 
       return `
-        <tr>
-          <td>${idx + 1}</td>
+        <tr data-bs-toggle="collapse" data-bs-target="#details-${idx}" style="cursor: pointer;">
           <td>${s.name || ''}</td>
-          <td>${s.email || ''}</td>
-          <td>${s.phone || ''}</td>
-          <td>${s.officers || ''}</td>
-          <td>${s.date || ''}</td>
           <td>$${Number(total).toFixed(2)}</td>
-          <td>${s.timestamp ? new Date(s.timestamp).toLocaleString() : ''}</td>
-          <td>${receipts || '<span class="text-muted">None</span>'}</td>
-          <td>
-            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#details-${idx}">Details</button>
-          </td>
+          <td>${s.officers || ''}</td>
         </tr>
         <tr class="collapse" id="details-${idx}">
-          <td colspan="10">
+          <td colspan="3">
             <div class="p-3 bg-light rounded">
               <pre class="mb-0">${JSON.stringify(s, null, 2)}</pre>
             </div>
@@ -114,20 +105,13 @@ export default async function handler(req, res) {
               <table class="table table-striped align-middle" id="submissionsTable">
                 <thead class="table-light">
                   <tr>
-                    <th>#</th>
                     <th>Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Budget</th>
-                    <th>Date</th>
                     <th>Total</th>
-                    <th>Submitted</th>
-                    <th>Receipts</th>
-                    <th></th>
+                    <th>Budget</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${rowsHtml || '<tr><td colspan="10" class="text-center text-muted">No submissions yet</td></tr>'}
+                  ${rowsHtml || '<tr><td colspan="3" class="text-center text-muted">No submissions yet</td></tr>'}
                 </tbody>
               </table>
             </div>
