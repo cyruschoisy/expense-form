@@ -11,6 +11,9 @@ import { Pool } from 'pg';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const DATA_FILE = path.join(__dirname, 'submissions.json');
+const RECEIPTS_DIR = path.join(__dirname, 'receipts');
+
 // Generate a secure session secret
 const SESSION_SECRET = crypto.randomBytes(64).toString('hex');
 
@@ -48,13 +51,6 @@ app.use(session({
 
 // Serve static files from React build
 app.use(express.static(path.join(__dirname, 'dist')));
-
-// // Password for admin access
-// const ADMIN_PASSWORD = 'admin123'; // Change this to your desired password
-
-// Data storage file
-const DATA_FILE = path.join(__dirname, 'submissions.json');
-const RECEIPTS_DIR = path.join(__dirname, 'receipts');
 
 // Ensure directories exist
 if (!fs.existsSync(DATA_FILE)) {
