@@ -323,3 +323,30 @@ export async function saveSubmissions(submissions) {
     console.error('Failed to save submissions to local file:', err);
   }
 }
+
+// Load a specific submission by ID
+export async function loadSubmissionById(id) {
+  try {
+    console.log('Loading submission by ID:', id);
+    const { blobs } = await list();
+    const submissionBlob = blobs.find((b) => b.pathname === `submission-${id}.json`);
+    
+    if (!submissionBlob) {
+      console.log('Submission not found:', id);
+      return null;
+    }
+
+    const submissionResponse = await fetch(submissionBlob.downloadUrl || submissionBlob.url);
+    if (!submissionResponse.ok) {
+      console.warn(`Failed to fetch submission blob: ${submissionBlob.pathname}`);
+      return null;
+    }
+
+    const submission = await submissionResponse.json();
+    console.log('Loaded submission:', id);
+    return submission;
+  } catch (err) {
+    console.error('Error loading submission by ID:', id, err);
+    return null;
+  }
+}

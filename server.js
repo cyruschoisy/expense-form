@@ -362,6 +362,16 @@ app.get('/api/expenses', async (req, res) => {
   }
 });
 
+app.get('/api/pdf', async (req, res) => {
+  try {
+    const { default: pdfHandler } = await import('./api/pdf.js');
+    await pdfHandler(req, res);
+  } catch (err) {
+    console.error('PDF generation error:', err);
+    res.status(500).json({ error: 'PDF generation failed' });
+  }
+});
+
 /* =========================
    REACT CATCH-ALL (LAST)
 ========================= */
