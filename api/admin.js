@@ -44,6 +44,76 @@ export default async function handler(req, res) {
     return sum + sTotal;
   }, 0);
 
+  const formatPhone = (phone) => {
+    if (!phone) return 'N/A';
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 10) {
+      return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    }
+    return phone; // fallback
+  };
+
+  const rowsHtml = submissions
+    .map((s, idx) => {
+      const total =
+        typeof s.total === 'number'
+          ? s.total
+          : Array.isArray(s.items)
+          ? s.items.filter(item => item && typeof item === 'object').reduce((sum, item) => {
+              const amt = parseFloat(item.amount || 0);
+              return sum + (isNaN(amt) ? 0 : amt);
+            }, 0)
+          : 0;
+
+      const receipts = (s.items || [])
+        .flatMap((item) => item.receipts || [])
+        .map(
+          (r) =>
+            `<a class="badge text-bg-secondary text-decoration-none me-1" target="_blank" href="${r.url}">${r.originalName || r.pathname}</a>`
+        )
+        .join(' ');
+
+      return `
+        <tr data-bs-toggle="collapse" data-bs-target="#details-${idx}" style="cursor: pointer;">
+          <td>${s.date || ''}</td>
+          <td>${s.name || ''}</td>
+          <td>$${Number(total).toFixed(2)}</td>
+        </tr>
+        <tr class="collapse" id="details-${idx}">
+          <td colspan="3">
+            <div class="p-3 bg-light rounded">
+              <div class="row">
+                <div class="col-md-6">
+                  <h6>Basic Information</h6>
+                  <p><strong>Name:</strong> ${s.name || 'N/A'}</p>
+                  <p><strong>Email:</strong> ${s.email || 'N/A'}</p>
+                  <p><strong>Phone:</strong> ${formatPhone(s.phone)}</p>
+                  <p><strong>Date:</strong> ${s.date || 'N/A'}</p>
+                  <p><strong>Total:</strong> $${Number(total).toFixed(2)}</p>
+                  ${s.signature ? `<p><strong>Signature:</strong> ${s.signature}</p>` : ''}
+                  ${s.signatureDate ? `<p><strong>Signature Date:</strong> ${s.signatureDate}</p>` : ''}
+                  <p><strong>Submitted:</strong> ${s.timestamp ? new Date(s.timestamp).toLocaleString('en-US', { timeZone: 'America/Toronto' }) + ' Toronto' : 'N/A'}</p>
+                </div>
+                <div class="col-md-6">
+                  <h6>Expense Items</h6>
+                  ${s.items && Array.isArray(s.items) && s.items.length > 0 ? s.items.filter(item => item && typeof item === 'object').map(item => `
+                    <div class="mb-2 p-2 border rounded">
+                      <p class="mb-1"><strong>Description:</strong> ${item.description || 'N/A'}</p>
+                      <p class="mb-1"><strong>Budget:</strong> ${item.officers || 'N/A'}</p>
+                      <p class="mb-1"><strong>Budget Line:</strong> ${item.budgetLine || 'N/A'}</p>
+                      <p class="mb-1"><strong>Amount:</strong> $${parseFloat(item.amount || 0).toFixed(2)}</p>
+                      <p class="mb-0"><strong>Receipts:</strong> ${(item.receipts || []).map(r => `<a class="badge text-bg-secondary text-decoration-none me-1" target="_blank" href="${r.url}">${r.originalName}</a>`).join(' ') || '<span class="text-muted">None</span>'}</p>
+                    </div>
+                  `).join('') : '<p class="text-muted">No items</p>'}
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      `;
+    })
+    .join('');
+
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.statusCode = 200;
   res.end(`
@@ -93,7 +163,7 @@ export default async function handler(req, res) {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td colspan="3" class="text-center text-muted">Loading...</td></tr>
+                  ${rowsHtml || '<tr><td colspan="3" class="text-center text-muted">No submissions yet</td></tr>'}
                 </tbody>
               </table>
             </div>
@@ -102,113 +172,16 @@ export default async function handler(req, res) {
       </main>
 
       <script>
-        const submissions = ${JSON.stringify(submissions)};
         const search = document.getElementById('search');
         const table = document.getElementById('submissionsTable');
-        
-        function renderTable(filteredSubmissions) {
-          const formatPhone = (phone) => {
-            if (!phone) return 'N/A';
-            const cleaned = phone.replace(/\D/g, '');
-            if (cleaned.length === 10) {
-              return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-            }
-            return phone;
-          };
-
-          const rowsHtml = filteredSubmissions
-            .map((s, idx) => {
-              const total =
-                typeof s.total === 'number'
-                  ? s.total
-                  : Array.isArray(s.items)
-                  ? s.items.filter(item => item && typeof item === 'object').reduce((sum, item) => {
-                      const amt = parseFloat(item.amount || 0);
-                      return sum + (isNaN(amt) ? 0 : amt);
-                    }, 0)
-                  : 0;
-
-              const receipts = (s.items || [])
-                .flatMap((item) => item.receipts || [])
-                .map(
-                  (r) =>
-                    `<a class="badge text-bg-secondary text-decoration-none me-1" target="_blank" href="${r.url}">${r.originalName || r.pathname}</a>`
-                )
-                .join(' ');
-
-              return `
-                <tr data-bs-toggle="collapse" data-bs-target="#details-${idx}" style="cursor: pointer;">
-                  <td>${s.date || ''}</td>
-                  <td>${s.name || ''}</td>
-                  <td>$${Number(total).toFixed(2)}</td>
-                </tr>
-                <tr class="collapse" id="details-${idx}">
-                  <td colspan="3">
-                    <div class="p-3 bg-light rounded">
-                      <div class="row">
-                        <div class="col-md-6">
-                          <h6>Basic Information</h6>
-                          <p><strong>Name:</strong> ${s.name || 'N/A'}</p>
-                          <p><strong>Email:</strong> ${s.email || 'N/A'}</p>
-                          <p><strong>Phone:</strong> ${formatPhone(s.phone)}</p>
-                          <p><strong>Date:</strong> ${s.date || 'N/A'}</p>
-                          <p><strong>Total:</strong> $${Number(total).toFixed(2)}</p>
-                          ${s.signature ? `<p><strong>Signature:</strong> ${s.signature}</p>` : ''}
-                          ${s.signatureDate ? `<p><strong>Signature Date:</strong> ${s.signatureDate}</p>` : ''}
-                          <p><strong>Submitted:</strong> ${s.timestamp ? new Date(s.timestamp).toLocaleString('en-US', { timeZone: 'America/Toronto' }) + ' Toronto' : 'N/A'}</p>
-                        </div>
-                        <div class="col-md-6">
-                          <h6>Expense Items</h6>
-                          ${s.items && Array.isArray(s.items) && s.items.length > 0 ? s.items.filter(item => item && typeof item === 'object').map(item => `
-                            <div class="mb-2 p-2 border rounded">
-                              <p class="mb-1"><strong>Description:</strong> ${item.description || 'N/A'}</p>
-                              <p class="mb-1"><strong>Budget:</strong> ${item.officers || 'N/A'}</p>
-                              <p class="mb-1"><strong>Budget Line:</strong> ${item.budgetLine || 'N/A'}</p>
-                              <p class="mb-1"><strong>Amount:</strong> $${parseFloat(item.amount || 0).toFixed(2)}</p>
-                              <p class="mb-0"><strong>Receipts:</strong> ${(item.receipts || []).map(r => `<a class="badge text-bg-secondary text-decoration-none me-1" target="_blank" href="${r.url}">${r.originalName}</a>`).join(' ') || '<span class="text-muted">None</span>'}</p>
-                            </div>
-                          `).join('') : '<p class="text-muted">No items</p>'}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              `;
-            })
-            .join('');
-
-          table.tBodies[0].innerHTML = rowsHtml || '<tr><td colspan="3" class="text-center text-muted">No submissions found</td></tr>';
-        }
-
         search.addEventListener('input', () => {
-          const q = search.value.toLowerCase().trim();
-          if (!q) {
-            renderTable(submissions);
-            return;
+          const q = search.value.toLowerCase();
+          for (const row of table.tBodies[0].rows) {
+            if (row.querySelector('[data-bs-toggle="collapse"]')) {
+              row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+            }
           }
-          
-          const filtered = submissions.filter(s => {
-            const searchableText = [
-              s.name || '',
-              s.email || '',
-              s.phone || '',
-              s.date || '',
-              ...(s.items || []).map(item => [
-                item.description || '',
-                item.officers || '',
-                item.budgetLine || '',
-                item.amount || ''
-              ]).flat()
-            ].join(' ').toLowerCase();
-            
-            return searchableText.includes(q);
-          });
-          
-          renderTable(filtered);
         });
-        
-        // Initial render
-        renderTable(submissions);
       </script>
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     </body>
