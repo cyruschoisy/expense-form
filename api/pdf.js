@@ -110,6 +110,35 @@ export default async function handler(req, res) {
     doc.text(`Date of signature: ${submission.signatureDate}`, 20, y);
   }
 
+  // Add receipt images on new pages
+  if (submission.items && Array.isArray(submission.items)) {
+    submission.items.forEach(item => {
+      if (item && typeof item === 'object' && item.image) {
+        doc.addPage();
+        let y = 20;
+        doc.setFont('times', 'bold');
+        doc.setFontSize(16);
+        const title = `Receipt for: ${item.description || 'N/A'}`;
+        const textWidth = doc.getTextWidth(title);
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const x = (pageWidth - textWidth) / 2;
+        doc.text(title, x, y);
+        y += 30;
+        // Add image
+        const imagePath = `../receipts/${item.image}`;
+        if (fs.existsSync(imagePath)) {
+          const imageBuffer = fs.readFileSync(imagePath);
+          const imageBase64 = imageBuffer.toString('base64');
+          // Center the image
+          const imgWidth = 150;
+          const imgHeight = 100;
+          const imgX = (pageWidth - imgWidth) / 2;
+          doc.addImage(`data:image/png;base64,${imageBase64}`, 'PNG', imgX, y, imgWidth, imgHeight);
+        }
+      }
+    });
+  }
+
   // Send PDF
   const pdfBuffer = doc.output('arraybuffer');
   res.setHeader('Content-Type', 'application/pdf');
