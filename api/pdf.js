@@ -63,10 +63,12 @@ export default async function handler(req, res) {
   y += 20;
 
   // Table header
+  doc.setFont('times', 'bold');
   doc.text('Description', 20, y);
   doc.text('Budget Line', 100, y);
   doc.text('Amount', 160, y);
   y += 5;
+  doc.setFont('times', 'normal');
   doc.line(20, y, 190, y); // horizontal line
   y += 10;
 
