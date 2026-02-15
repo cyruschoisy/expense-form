@@ -157,7 +157,7 @@ export default async function handler(req, res) {
               <table class="table table-striped align-middle" id="submissionsTable">
                 <thead class="table-light">
                   <tr>
-                    <th>Date</th>
+                    <th>Invoice Date</th>
                     <th>Name</th>
                     <th>Total</th>
                   </tr>
@@ -176,9 +176,16 @@ export default async function handler(req, res) {
         const table = document.getElementById('submissionsTable');
         search.addEventListener('input', () => {
           const q = search.value.toLowerCase();
-          for (const row of table.tBodies[0].rows) {
+          const rows = table.tBodies[0].rows;
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
             if (row.querySelector('[data-bs-toggle="collapse"]')) {
-              row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+              const shouldShow = row.textContent.toLowerCase().includes(q) || 
+                (rows[i + 1] && rows[i + 1].textContent.toLowerCase().includes(q));
+              row.style.display = shouldShow ? '' : 'none';
+              if (rows[i + 1]) {
+                rows[i + 1].style.display = shouldShow ? '' : 'none';
+              }
             }
           }
         });
