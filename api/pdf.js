@@ -30,8 +30,13 @@ export default async function handler(req, res) {
   let y = 20;
 
   // Title
-  doc.setFontSize(16);
-  doc.text('Form F1 - Expense Report', 30, y);
+  doc.setFont('times', 'bold');
+  doc.setFontSize(20);
+  const titleText = 'Form F1 - Expense Report';
+  const textWidth = doc.getTextWidth(titleText);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const x = (pageWidth - textWidth) / 2;
+  doc.text(titleText, x, y);
   y += 20;
 
   // Basic info
