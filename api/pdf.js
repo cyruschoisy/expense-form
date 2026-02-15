@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { loadSubmissionById, requireAdmin } from './_utils.js';
+import fs from 'fs';
 
 export default async function handler(req, res) {
   if (!requireAdmin(req, res)) {
@@ -27,7 +28,16 @@ export default async function handler(req, res) {
 
   // Create PDF
   const doc = new jsPDF();
-  let y = 20;
+
+  // Add banner image if exists
+  const imagePath = '../public/ess-banner.png';
+  if (fs.existsSync(imagePath)) {
+    const imageBuffer = fs.readFileSync(imagePath);
+    const imageBase64 = imageBuffer.toString('base64');
+    doc.addImage(`data:image/png;base64,${imageBase64}`, 'PNG', 10, 10, 100, 20);
+  }
+
+  let y = 40;
 
   // Title
   doc.setFont('times', 'bold');
@@ -38,6 +48,8 @@ export default async function handler(req, res) {
   const x = (pageWidth - textWidth) / 2;
   doc.text(titleText, x, y);
   y += 20;
+
+  doc.setFont('times', 'normal');
 
   // Basic info
   doc.setFontSize(12);
@@ -83,10 +95,10 @@ export default async function handler(req, res) {
   y += 5;
   doc.line(20, y, 190, y); // horizontal line
   y += 10;
-  doc.setFont(undefined, 'bold');
+  doc.setFont('times', 'bold');
   doc.text('Total', 100, y);
   doc.text(`$${total.toFixed(2)}`, 160, y);
-  doc.setFont(undefined, 'normal');
+  doc.setFont('times', 'normal');
   y += 20;
 
   // Signature
