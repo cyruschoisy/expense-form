@@ -30,7 +30,7 @@ export default async function handler(req, res) {
   const doc = new jsPDF();
 
   // Add banner image if exists
-  const imagePath = '../public/ess-banner.png';
+  const imagePath = './public/ess-banner.png';
   if (fs.existsSync(imagePath)) {
     const imageBuffer = fs.readFileSync(imagePath);
     const imageBase64 = imageBuffer.toString('base64');
@@ -114,8 +114,9 @@ export default async function handler(req, res) {
 
   // Add receipt images on new pages
   if (submission.items && Array.isArray(submission.items)) {
-    submission.items.forEach(item => {
-      if (item && typeof item === 'object' && item.image) {
+    for (const item of submission.items) {
+      if (item && typeof item === 'object' && item.receipts && item.receipts.length > 0) {
+        const receipt = item.receipts[0]; // Use the first receipt
         doc.addPage();
         let y = 20;
         doc.setFont('times', 'bold');
@@ -127,18 +128,22 @@ export default async function handler(req, res) {
         doc.text(title, x, y);
         y += 30;
         // Add image
-        const imagePath = `../receipts/${item.image}`;
-        if (fs.existsSync(imagePath)) {
-          const imageBuffer = fs.readFileSync(imagePath);
-          const imageBase64 = imageBuffer.toString('base64');
-          // Center the image
-          const imgWidth = 150;
-          const imgHeight = 100;
-          const imgX = (pageWidth - imgWidth) / 2;
-          doc.addImage(`data:image/png;base64,${imageBase64}`, 'PNG', imgX, y, imgWidth, imgHeight);
+        try {
+          const response = await fetch(receipt.url);
+          if (response.ok) {
+            const imageBuffer = Buffer.from(await response.arrayBuffer());
+            const imageBase64 = imageBuffer.toString('base64');
+            // Center the image
+            const imgWidth = 150;
+            const imgHeight = 100;
+            const imgX = (pageWidth - imgWidth) / 2;
+            doc.addImage(`data:image/${receipt.type.split('/')[1] || 'png'};base64,${imageBase64}`, receipt.type.split('/')[1].toUpperCase() || 'PNG', imgX, y, imgWidth, imgHeight);
+          }
+        } catch (err) {
+          console.error('Failed to load receipt image:', err);
         }
       }
-    });
+    }
   }
 
   // Send PDF
