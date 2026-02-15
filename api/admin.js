@@ -78,11 +78,13 @@ export default async function handler(req, res) {
           <td>${s.date || ''}</td>
           <td>${s.name || ''}</td>
           <td>$${Number(total).toFixed(2)}</td>
-          <td><a href="/api/pdf?id=${s.id || ''}" target="_blank" class="btn btn-sm btn-outline-primary">Export PDF</a></td>
         </tr>
         <tr class="collapse" id="details-${idx}">
-          <td colspan="4">
+          <td colspan="3">
             <div class="p-3 bg-light rounded">
+              <div class="d-flex justify-content-end mb-3">
+                <a href="/api/pdf?id=${s.id || ''}" target="_blank" class="btn btn-outline-primary">Export as PDF</a>
+              </div>
               <div class="row">
                 <div class="col-md-6">
                   <h6>Basic Information</h6>
@@ -161,7 +163,6 @@ export default async function handler(req, res) {
                     <th>Invoice Date</th>
                     <th>Name</th>
                     <th>Total</th>
-                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
