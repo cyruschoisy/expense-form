@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { put } from '@vercel/blob';
-import { saveSubmission } from './_utils.js';
+import { saveSubmission, parseJsonBody } from './_utils.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
