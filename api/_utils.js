@@ -253,9 +253,6 @@ export async function saveSubmission(submission) {
       contentType: 'application/json'
     });
 
-    // Update the index
-    await updateSubmissionsIndex(submissionId);
-
     console.log('Successfully saved submission:', submissionId);
   } catch (err) {
     console.error('Error saving submission:', err);
@@ -263,82 +260,35 @@ export async function saveSubmission(submission) {
   }
 }
 
-async function updateSubmissionsIndex(newSubmissionId) {
-  try {
-    const { blobs } = await list();
-    let index = { submissionIds: [] };
-
-    const indexBlob = blobs.find((b) => b.pathname === SUBMISSIONS_INDEX_KEY);
-    if (indexBlob) {
-      const response = await fetch(indexBlob.downloadUrl || indexBlob.url);
-      if (response.ok) {
-        index = await response.json();
-      }
-    }
-
-    // Add new submission ID if not already present
-    if (!index.submissionIds.includes(newSubmissionId)) {
-      index.submissionIds.unshift(newSubmissionId); // Add to beginning for most recent first
-    }
-
-    // Save updated index
-    await put(SUBMISSIONS_INDEX_KEY, JSON.stringify(index, null, 2), {
-      access: 'public',
-      contentType: 'application/json'
-    });
-
-    console.log('Updated submissions index');
-  } catch (err) {
-    console.error('Error updating submissions index:', err);
-  }
-}
-
-// Legacy function for backward compatibility - loads all submissions
+// Load all submissions by scanning blobs
 export async function loadSubmissions() {
   try {
     console.log('Listing blobs...');
     const { blobs } = await list();
     console.log('Found', blobs.length, 'blobs total');
 
-    const indexBlob = blobs.find((b) => b.pathname === SUBMISSIONS_INDEX_KEY);
-    if (!indexBlob) {
-      console.log('No submissions index found');
-      return [];
-    }
-
-    console.log('Found submissions index:', indexBlob.pathname);
-
-    const indexResponse = await fetch(indexBlob.downloadUrl || indexBlob.url);
-    if (!indexResponse.ok) {
-      console.error('Failed to fetch submissions index');
-      return [];
-    }
-
-    const index = await indexResponse.json();
-    const submissionIds = index.submissionIds || [];
-    console.log('Found submission IDs:', submissionIds.length);
+    // Find all submission blobs
+    const submissionBlobs = blobs.filter((b) => b.pathname.startsWith('submission-') && b.pathname.endsWith('.json'));
+    console.log('Found submission blobs:', submissionBlobs.length);
 
     const submissions = [];
-    for (const id of submissionIds) {
+    for (const blob of submissionBlobs) {
       try {
-        const submissionBlob = blobs.find((b) => b.pathname === `submission-${id}.json`);
-        if (!submissionBlob) {
-          console.warn(`Submission blob not found for ID: ${id}`);
-          continue;
-        }
-
-        const submissionResponse = await fetch(submissionBlob.downloadUrl || submissionBlob.url);
+        const submissionResponse = await fetch(blob.downloadUrl || blob.url);
         if (!submissionResponse.ok) {
-          console.warn(`Failed to fetch submission ${id}`);
+          console.warn(`Failed to fetch submission blob: ${blob.pathname}`);
           continue;
         }
 
         const submission = await submissionResponse.json();
         submissions.push(submission);
       } catch (err) {
-        console.error(`Error loading submission ${id}:`, err);
+        console.error(`Error loading submission from ${blob.pathname}:`, err);
       }
     }
+
+    // Sort by timestamp, most recent first
+    submissions.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
 
     console.log('Loaded submissions:', submissions.length);
     return submissions;
