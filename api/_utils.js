@@ -299,39 +299,49 @@ export async function loadSubmissions() {
     console.log('Listing blobs...');
     const { blobs } = await list();
     console.log('Found', blobs.length, 'blobs total');
-    blobs.forEach(b => console.log('Blob:', b.pathname));
 
-    const existing = blobs.find((b) => b.pathname === 'submissions.json');
-    if (!existing) {
-      console.log('No submissions blob found');
+    const indexBlob = blobs.find((b) => b.pathname === SUBMISSIONS_INDEX_KEY);
+    if (!indexBlob) {
+      console.log('No submissions index found');
       return [];
     }
 
-    console.log('Found submissions blob:', existing.pathname, 'url:', existing.url);
+    console.log('Found submissions index:', indexBlob.pathname);
 
-    // Use downloadUrl if available, otherwise use url
-    const fetchUrl = existing.downloadUrl || existing.url;
-    const url = fetchUrl + '?t=' + Date.now();
+    const indexResponse = await fetch(indexBlob.downloadUrl || indexBlob.url);
+    if (!indexResponse.ok) {
+      console.error('Failed to fetch submissions index');
+      return [];
+    }
 
-    console.log('Fetching from:', url);
+    const index = await indexResponse.json();
+    const submissionIds = index.submissionIds || [];
+    console.log('Found submission IDs:', submissionIds.length);
 
-    const response = await fetch(url, {
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache'
+    const submissions = [];
+    for (const id of submissionIds) {
+      try {
+        const submissionBlob = blobs.find((b) => b.pathname === `submission-${id}.json`);
+        if (!submissionBlob) {
+          console.warn(`Submission blob not found for ID: ${id}`);
+          continue;
+        }
+
+        const submissionResponse = await fetch(submissionBlob.downloadUrl || submissionBlob.url);
+        if (!submissionResponse.ok) {
+          console.warn(`Failed to fetch submission ${id}`);
+          continue;
+        }
+
+        const submission = await submissionResponse.json();
+        submissions.push(submission);
+      } catch (err) {
+        console.error(`Error loading submission ${id}:`, err);
       }
-    });
-
-    if (!response.ok) {
-      console.error('Failed to fetch submissions:', response.status, response.statusText);
-      const text = await response.text();
-      console.error('Response body:', text);
-      return [];
     }
 
-    const data = await response.json();
-    console.log('Loaded submissions:', data.length);
-    return Array.isArray(data) ? data : [];
+    console.log('Loaded submissions:', submissions.length);
+    return submissions;
   } catch (err) {
     console.error('Error loading submissions:', err);
     return [];
