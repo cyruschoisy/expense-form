@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { loadSubmissionById, requireAdmin } from './_utils.js';
 import fs from 'fs';
+import path from 'path';
 import imageSize from 'image-size';
 
 export default async function handler(req, res) {
@@ -31,7 +32,7 @@ export default async function handler(req, res) {
   const doc = new jsPDF();
 
   // Add banner image if exists
-  const imagePath = '/ess-banner.png';
+  const imagePath = path.join(process.cwd(), 'public', 'ess-banner.png');
   let y = 40;
   if (fs.existsSync(imagePath)) {
     const imageBuffer = fs.readFileSync(imagePath);
