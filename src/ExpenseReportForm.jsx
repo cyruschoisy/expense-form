@@ -270,6 +270,7 @@ const officers = [
                   type="file"
                   className="form-control"
                   accept="image/*"
+                  required
                   onChange={(e) => updateReceipts(i, e.target.files)}
                 />
               </div>
