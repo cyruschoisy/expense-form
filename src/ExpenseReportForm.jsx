@@ -105,67 +105,10 @@ export default function ExpenseReportForm() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const API_BASE =
-      import.meta.env.VITE_API_BASE ||
-      (import.meta.env.DEV ? "http://localhost:3000" : "");
-    const API_URL = `${API_BASE}/api/submit`;
-
-    try {
-    const encodedItems = await Promise.all(
-      items.map(async (item) => ({
-        description: item.description,
-        budgetLine: item.budgetLine,
-        amount: item.amount,
-        notes: item.notes,
-        officers: item.officers,
-        receipts: await Promise.all(
-          item.receipts.map(async (file) => {
-            // Compress images to reduce payload size
-            let processedFile = file;
-            if (file.type.startsWith('image/')) {
-              try {
-                const compressed = await compressImage(file);
-                // Only use compressed version if it's actually smaller
-                processedFile = compressed.size < file.size ? compressed : file;
-                console.log(`Receipt ${file.name}: ${file.size} → ${processedFile.size} bytes`);
-              } catch (err) {
-                console.warn('Failed to compress image, using original:', err);
-              }
-            }
-            
-            return {
-              name: file.name,
-              type: processedFile.type || file.type,
-              data: await toBase64(processedFile)
-            };
-          })
-        )
-      }))
-    );
-
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        ...form,
-        items: encodedItems,
-        total
-      })
-    });
-
-    if (response.ok) {
-      alert("Expense report submitted successfully ✅");
-    } else {
-      alert("Error submitting: " + response.status + " " + response.statusText);
-    }
-  } catch (error) {
-    alert("Error: " + error.message);
-  } finally {
+    // Show success modal without API call
+    setShowModal(true);
     setIsSubmitting(false);
-  }
-};
+  };
 
 const officers = [
   "President",
