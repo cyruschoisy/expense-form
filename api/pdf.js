@@ -34,8 +34,14 @@ export default async function handler(req, res) {
   const imagePath = '/public/ess-banner.png';
   if (fs.existsSync(imagePath)) {
     const imageBuffer = fs.readFileSync(imagePath);
+    const dimensions = imageSize(imageBuffer);
     const imageBase64 = imageBuffer.toString('base64');
-    doc.addImage(`data:image/png;base64,${imageBase64}`, 'PNG', 10, 10, 100, 20);
+    // Scale to fit width 100, height proportional
+    const aspectRatio = dimensions.height / dimensions.width;
+    const imgWidth = 100;
+    const imgHeight = imgWidth * aspectRatio;
+    const imgType = dimensions.type.toUpperCase();
+    doc.addImage(`data:image/${dimensions.type};base64,${imageBase64}`, imgType, 10, 10, imgWidth, imgHeight);
   }
 
   let y = 40;
