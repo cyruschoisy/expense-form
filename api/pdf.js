@@ -31,7 +31,7 @@ export default async function handler(req, res) {
   const doc = new jsPDF();
 
   // Add banner image if exists
-  const imagePath = './ess-banner.png';
+  const imagePath = '/ess-banner.png';
   let y = 40;
   if (fs.existsSync(imagePath)) {
     const imageBuffer = fs.readFileSync(imagePath);
