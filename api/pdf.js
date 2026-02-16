@@ -42,7 +42,7 @@ export default async function handler(req, res) {
     const imgWidth = 100;
     const imgHeight = imgWidth * aspectRatio;
     const imgType = dimensions.type.toUpperCase();
-    doc.addImage(`data:image/${dimensions.type};base64,${imageBase64}`, imgType, 10, 10, imgWidth, imgHeight);
+    doc.addImage(imageBase64, imgType, 10, 10, imgWidth, imgHeight);
     y = 10 + imgHeight + 10; // Adjust y to below the image
   }
 
