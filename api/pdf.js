@@ -44,7 +44,7 @@ export default async function handler(req, res) {
     const imgHeight = imgWidth * aspectRatio;
     const imgType = dimensions.type.toUpperCase();
     doc.addImage(imageBase64, imgType, 10, 10, imgWidth, imgHeight);
-    y = 10 + imgHeight + 10; // Adjust y to below the image
+    y = 10 + imgHeight + 30; // Adjust y to below the image
   }
 
   // Title
