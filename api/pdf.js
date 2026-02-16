@@ -44,7 +44,7 @@ export default async function handler(req, res) {
     const imgHeight = imgWidth * aspectRatio;
     const imgType = dimensions.type.toUpperCase();
     doc.addImage(imageBase64, imgType, 10, 10, imgWidth, imgHeight);
-    y = 10 + imgHeight + 30; // Adjust y to below the image
+    y = 10 + imgHeight + 15; // Adjust y to below the image
   }
 
   // Title
@@ -134,7 +134,7 @@ export default async function handler(req, res) {
         const pageWidth = doc.internal.pageSize.getWidth();
         const x = (pageWidth - textWidth) / 2;
         doc.text(title, x, y);
-        y += 30;
+        y += 15;
         // Add image
         try {
           const response = await fetch(receipt.url);
