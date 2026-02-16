@@ -56,7 +56,12 @@ export default function ExpenseReportForm() {
 
   const updateReceipts = (index, files) => {
     const updated = [...items];
-    updated[index].receipts = Array.from(files);
+    // Only allow one image file
+    if (files.length > 0 && files[0].type.startsWith('image/')) {
+      updated[index].receipts = [files[0]];
+    } else {
+      updated[index].receipts = [];
+    }
     setItems(updated);
   };
 
@@ -321,8 +326,6 @@ const officers = [
                   type="file"
                   className="form-control"
                   accept="image/*"
-                  multiple 
-                  max="1"
                   onChange={(e) => updateReceipts(i, e.target.files)}
                 />
               </div>
@@ -344,7 +347,7 @@ const officers = [
 
             {item.receipts.length > 0 && (
               <small className="text-muted">
-                {item.receipts.length} receipt(s) attached
+                Receipt attached
               </small>
             )}
             {i > 0 && (
