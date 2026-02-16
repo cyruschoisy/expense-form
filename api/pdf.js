@@ -31,7 +31,8 @@ export default async function handler(req, res) {
   const doc = new jsPDF();
 
   // Add banner image if exists
-  const imagePath = '../public/ess-banner.png';
+  const imagePath = './public/ess-banner.png';
+  let y = 40;
   if (fs.existsSync(imagePath)) {
     const imageBuffer = fs.readFileSync(imagePath);
     const dimensions = imageSize(imageBuffer);
@@ -42,9 +43,8 @@ export default async function handler(req, res) {
     const imgHeight = imgWidth * aspectRatio;
     const imgType = dimensions.type.toUpperCase();
     doc.addImage(`data:image/${dimensions.type};base64,${imageBase64}`, imgType, 10, 10, imgWidth, imgHeight);
+    y = 10 + imgHeight + 10; // Adjust y to below the image
   }
-
-  let y = 40;
 
   // Title
   doc.setFont('times', 'bold');
