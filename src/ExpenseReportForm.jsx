@@ -30,8 +30,35 @@ export default function ExpenseReportForm() {
     }
   ]);
 
-  const updateForm = (field, value) =>
-    setForm({ ...form, [field]: value });
+  const resetForm = () => {
+    setForm({
+      name: "",
+      position: "",
+      email: "",
+      phone: "",
+      date: "",
+      officers: "",
+      signature: "",
+      signatureDate: today,
+    });
+    setItems([
+      {
+        description: "",
+        budgetLine: "",
+        amount: "",
+        notes: "",
+        officers: "",
+        receipts: []
+      }
+    ]);
+    setBudgetConfirmed(false);
+    setTruthConfirmed(false);
+  };
+
+  const handleModalClose = () => {
+    setShowModal(false);
+    resetForm();
+  };
 
   const updateItem = (index, field, value) => {
     const updated = [...items];
@@ -105,9 +132,47 @@ export default function ExpenseReportForm() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Show success modal without API call
-    setShowModal(true);
-    setIsSubmitting(false);
+    try {
+      // Prepare the payload
+      const payload = {
+        ...form,
+        items: items.map(item => ({
+          ...item,
+          receipts: item.receipts.map(receipt => ({
+            name: receipt.name,
+            type: receipt.type,
+            data: receipt.data // base64 data
+          }))
+        }))
+      };
+
+      // Make the API call
+      const response = await fetch('/api/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Submission failed');
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Show success modal
+        setShowModal(true);
+      } else {
+        throw new Error(result.error || 'Submission failed');
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      alert('Failed to submit expense report. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
 const officers = [
@@ -394,13 +459,13 @@ const officers = [
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">Submission Successful</h5>
-              <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+              <button type="button" className="btn-close" onClick={handleModalClose}></button>
             </div>
             <div className="modal-body">
               Your expense report has been submitted successfully! ✅
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Close</button>
+              <button type="button" className="btn btn-secondary" onClick={handleModalClose}>Close</button>
             </div>
           </div>
         </div>
