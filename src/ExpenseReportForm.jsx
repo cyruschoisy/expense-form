@@ -30,35 +30,8 @@ export default function ExpenseReportForm() {
     }
   ]);
 
-  const resetForm = () => {
-    setForm({
-      name: "",
-      position: "",
-      email: "",
-      phone: "",
-      date: "",
-      officers: "",
-      signature: "",
-      signatureDate: today,
-    });
-    setItems([
-      {
-        description: "",
-        budgetLine: "",
-        amount: "",
-        notes: "",
-        officers: "",
-        receipts: []
-      }
-    ]);
-    setBudgetConfirmed(false);
-    setTruthConfirmed(false);
-  };
-
-  const handleModalClose = () => {
-    setShowModal(false);
-    resetForm();
-  };
+  const updateForm = (field, value) =>
+    setForm({ ...form, [field]: value });
 
   const updateItem = (index, field, value) => {
     const updated = [...items];
@@ -133,39 +106,59 @@ export default function ExpenseReportForm() {
     setIsSubmitting(true);
 
     try {
-      // Prepare the payload
+      // Convert receipts to base64 with compression
+      const itemsWithBase64Receipts = await Promise.all(
+        items.map(async (item) => {
+          const receiptsWithBase64 = await Promise.all(
+            item.receipts.map(async (receipt) => {
+              if (receipt) {
+                // Compress the image first
+                const compressedBlob = await compressImage(receipt);
+                // Convert compressed blob to base64
+                const base64 = await new Promise((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onload = () => resolve(reader.result);
+                  reader.onerror = reject;
+                  reader.readAsDataURL(compressedBlob);
+                });
+                return {
+                  name: receipt.name,
+                  type: receipt.type,
+                  data: base64
+                };
+              }
+              return null;
+            }).filter(Boolean)
+          );
+          return {
+            ...item,
+            receipts: receiptsWithBase64
+          };
+        })
+      );
+
       const payload = {
         ...form,
-        items: items.map(item => ({
-          ...item,
-          receipts: item.receipts.map(receipt => ({
-            name: receipt.name,
-            type: receipt.type,
-            data: receipt.data // base64 data
-          }))
-        }))
+        items: itemsWithBase64Receipts
       };
 
-      // Make the API call
       const response = await fetch('/api/submit', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
-        throw new Error('Submission failed');
+        throw new Error(`Submission failed: ${response.status}`);
       }
 
       const result = await response.json();
-
       if (result.success) {
-        // Show success modal
         setShowModal(true);
       } else {
-        throw new Error(result.error || 'Submission failed');
+        throw new Error('Submission failed');
       }
     } catch (error) {
       console.error('Submission error:', error);
@@ -459,13 +452,13 @@ const officers = [
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">Submission Successful</h5>
-              <button type="button" className="btn-close" onClick={handleModalClose}></button>
+              <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
             </div>
             <div className="modal-body">
               Your expense report has been submitted successfully! ✅
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={handleModalClose}>Close</button>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Close</button>
             </div>
           </div>
         </div>
