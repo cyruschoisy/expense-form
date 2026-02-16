@@ -78,10 +78,9 @@ export default async function handler(req, res) {
           <td>${s.date || ''}</td>
           <td>${s.name || ''}</td>
           <td>$${Number(total).toFixed(2)}</td>
-          <td><input type="checkbox" class="reimbursed-checkbox" data-id="${s.id || ''}" ${s.reimbursed ? 'checked' : ''} /></td>
         </tr>
         <tr class="collapse" id="details-${idx}">
-          <td colspan="4">
+          <td colspan="3">
             <div class="p-3 bg-light rounded">
               <div class="d-flex justify-content-end mb-3">
                 <a href="/api/pdf?id=${s.id || ''}" target="_blank" class="btn btn-outline-primary">Export as PDF</a>
@@ -164,11 +163,10 @@ export default async function handler(req, res) {
                     <th>Invoice Date</th>
                     <th>Name</th>
                     <th>Total</th>
-                    <th>Reimbursed</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${rowsHtml || '<tr><td colspan="4" class="text-center text-muted">No submissions yet</td></tr>'}
+                  ${rowsHtml || '<tr><td colspan="3" class="text-center text-muted">No submissions yet</td></tr>'}
                 </tbody>
               </table>
             </div>
@@ -184,37 +182,6 @@ export default async function handler(req, res) {
           for (const row of table.tBodies[0].rows) {
             if (row.querySelector('[data-bs-toggle="collapse"]')) {
               row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
-            }
-          }
-        });
-
-        // Handle reimbursed checkbox changes
-        document.addEventListener('change', async (e) => {
-          if (e.target.classList.contains('reimbursed-checkbox')) {
-            const checkbox = e.target;
-            const id = checkbox.dataset.id;
-            const reimbursed = checkbox.checked;
-
-            try {
-              const response = await fetch('/api/update-reimbursed', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ id, reimbursed })
-              });
-
-              if (!response.ok) {
-                throw new Error('Update failed');
-              }
-
-              // Optionally show success message
-              console.log('Reimbursed status updated');
-            } catch (err) {
-              console.error('Error updating reimbursed status:', err);
-              // Revert checkbox on error
-              checkbox.checked = !reimbursed;
-              alert('Failed to update reimbursed status');
             }
           }
         });
