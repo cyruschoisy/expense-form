@@ -33,18 +33,19 @@ export default async function handler(req, res) {
   // Add banner image if exists
   const imagePath = './public/ess-banner.png';
   let y = 40;
-  
-  const imageBuffer = fs.readFileSync(imagePath);
-  const dimensions = imageSize(imageBuffer);
-  const imageBase64 = imageBuffer.toString('base64');
-  // Scale to fit width 100, height proportional
-  const aspectRatio = dimensions.height / dimensions.width;
-  const imgWidth = 100;
-  const imgHeight = imgWidth * aspectRatio;
-  const imgType = dimensions.type.toUpperCase();
-  doc.addImage(imageBase64, imgType, 10, 10, imgWidth, imgHeight);
-  y = 10 + imgHeight + 10; // Adjust y to below the image
-  
+  if (fs.existsSync(imagePath)) {
+    const imageBuffer = fs.readFileSync(imagePath);
+    const dimensions = imageSize(imageBuffer);
+    const imageBase64 = imageBuffer.toString('base64');
+    // Scale to fit width 100, height proportional
+    const aspectRatio = dimensions.height / dimensions.width;
+    const imgWidth = 100;
+    const imgHeight = imgWidth * aspectRatio;
+    const imgType = dimensions.type.toUpperCase();
+    doc.addImage(imageBase64, imgType, 10, 10, imgWidth, imgHeight);
+    y = 10 + imgHeight + 10; // Adjust y to below the image
+  }
+
   // Title
   doc.setFont('times', 'bold');
   doc.setFontSize(20);
