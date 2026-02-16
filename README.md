@@ -18,3 +18,22 @@ If you are developing a production application, we recommend using TypeScript wi
 `npm run dev`
 `npm run build`
 `npm run server`
+
+## Email Setup
+
+The application sends an email with the PDF attachment whenever a form is submitted. To set this up:
+
+1. Copy `.env.example` to `.env` and fill in your email credentials:
+   - `SMTP_HOST`: Your SMTP server (e.g., smtp.gmail.com)
+   - `SMTP_PORT`: SMTP port (587 for TLS)
+   - `EMAIL_USER`: Your email address for authentication
+   - `EMAIL_PASS`: Your email password or app password
+   - `NO_REPLY_EMAIL`: The no-reply email address to send from (e.g., noreply@yourdomain.com)
+   - `ADMIN_EMAIL`: The email address to receive notifications
+
+2. For Gmail, you need to generate an App Password:
+   - Go to Google Account settings
+   - Enable 2FA
+   - Generate an App Password for this app
+
+3. For production (Vercel), set these as environment variables in your Vercel dashboard.
