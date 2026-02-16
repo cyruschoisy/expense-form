@@ -17,6 +17,7 @@ export default function ExpenseReportForm() {
   const [budgetConfirmed, setBudgetConfirmed] = useState(false);
   const [truthConfirmed, setTruthConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   const [items, setItems] = useState([
     {
@@ -442,6 +443,26 @@ const officers = [
           </button>
         </div>
       </form>
+
+      {/* Submission Success Modal */}
+      <div className={`modal ${showModal ? 'show' : ''}`} style={{ display: showModal ? 'block' : 'none' }} tabIndex="-1">
+        <div className="modal-dialog">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title">Submission Successful</h5>
+              <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+            </div>
+            <div className="modal-body">
+              Your expense report has been submitted successfully! ✅
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {showModal && <div className="modal-backdrop show"></div>}
+
     </div>
   );
 }
