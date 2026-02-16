@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { put } from '@vercel/blob';
-import { saveSubmission, parseJsonBody, generatePDF, sendEmailWithPDF } from './_utils.js';
+import { saveSubmission, parseJsonBody } from './_utils.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -70,15 +70,6 @@ export default async function handler(req, res) {
     };
 
     await saveSubmission(payload);
-
-    // Generate PDF and send email
-    try {
-      const pdfBuffer = await generatePDF(payload);
-      await sendEmailWithPDF(pdfBuffer, payload);
-    } catch (emailErr) {
-      console.error('Failed to send email:', emailErr);
-      // Don't fail the submission if email fails
-    }
 
     res.setHeader('Content-Type', 'application/json');
     res.statusCode = 200;
