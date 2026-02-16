@@ -135,7 +135,6 @@ export default async function handler(req, res) {
             const imageBase64 = imageBuffer.toString('base64');
             // Center the image
             const imgWidth = 150;
-            const imgHeight = 100;
             const imgX = (pageWidth - imgWidth) / 2;
             doc.addImage(`data:image/${receipt.type.split('/')[1] || 'png'};base64,${imageBase64}`, receipt.type.split('/')[1].toUpperCase() || 'PNG', imgX, y, imgWidth, imgHeight);
           }
