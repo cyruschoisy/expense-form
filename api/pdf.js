@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { loadSubmissionById, requireAdmin } from './_utils.js';
 import fs from 'fs';
+import imageSize from 'image-size';
 
 export default async function handler(req, res) {
   if (!requireAdmin(req, res)) {
@@ -132,9 +133,21 @@ export default async function handler(req, res) {
           const response = await fetch(receipt.url);
           if (response.ok) {
             const imageBuffer = Buffer.from(await response.arrayBuffer());
+            const dimensions = imageSize(imageBuffer);
             const imageBase64 = imageBuffer.toString('base64');
-            // Center the image
-            const imgWidth = 150;
+            // Calculate dimensions to fit page
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const margin = 20;
+            const maxWidth = pageWidth - 2 * margin;
+            const aspectRatio = dimensions.height / dimensions.width;
+            let imgWidth = maxWidth;
+            let imgHeight = imgWidth * aspectRatio;
+            const maxHeight = pageHeight - y - 50; // leave space for text
+            if (imgHeight > maxHeight) {
+              imgHeight = maxHeight;
+              imgWidth = imgHeight / aspectRatio;
+            }
             const imgX = (pageWidth - imgWidth) / 2;
             doc.addImage(`data:image/${receipt.type.split('/')[1] || 'png'};base64,${imageBase64}`, receipt.type.split('/')[1].toUpperCase() || 'PNG', imgX, y, imgWidth, imgHeight);
           }
