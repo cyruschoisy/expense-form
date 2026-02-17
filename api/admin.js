@@ -93,7 +93,7 @@ export default async function handler(req, res) {
                   <p><strong>Phone:</strong> ${formatPhone(s.phone)}</p>
                   <p><strong>Date:</strong> ${s.date || 'N/A'}</p>
                   <p><strong>Total:</strong> $${Number(total).toFixed(2)}</p>
-                  ${s.signature ? `<p><strong>Signature:</strong> ${s.signature}</p>` : ''}
+                  ${s.signature ? (s.signature.startsWith('data:image/') ? `<p><strong>Signature:</strong><br><img src="${s.signature}" alt="Signature" style="max-width: 300px; max-height: 150px; border: 1px solid #ccc; margin-top: 5px;"></p>` : `<p><strong>Signature:</strong> ${s.signature}</p>`) : ''}
                   ${s.signatureDate ? `<p><strong>Signature Date:</strong> ${s.signatureDate}</p>` : ''}
                   <p><strong>Submitted:</strong> ${s.timestamp ? new Date(s.timestamp).toLocaleString('en-US', { timeZone: 'America/Toronto' }) + ' Toronto' : 'N/A'}</p>
                 </div>
