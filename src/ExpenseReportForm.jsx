@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import SignatureCanvas from 'react-signature-canvas';
 
 export default function ExpenseReportForm() {
   const today = new Date().toLocaleDateString('en-CA');
+  const sigCanvas = useRef(null);
   const [form, setForm] = useState({
     name: "",
     position: "",
@@ -10,7 +12,7 @@ export default function ExpenseReportForm() {
     phone: "",
     date: "",
     officers: "",
-    signature: "",
+    signature: "", // This will now be base64 image data
     signatureDate: today,
   });
 
@@ -106,6 +108,19 @@ export default function ExpenseReportForm() {
     setIsSubmitting(true);
 
     try {
+      // Validate signature
+      if (!sigCanvas.current || sigCanvas.current.isEmpty()) {
+        alert('Please provide your signature before submitting.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Get signature from canvas
+      let signatureData = "";
+      if (sigCanvas.current && !sigCanvas.current.isEmpty()) {
+        signatureData = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
+      }
+
       // Convert receipts to base64 with compression
       const itemsWithBase64Receipts = await Promise.all(
         items.map(async (item) => {
@@ -139,6 +154,7 @@ export default function ExpenseReportForm() {
 
       const payload = {
         ...form,
+        signature: signatureData,
         items: itemsWithBase64Receipts
       };
 
@@ -378,15 +394,26 @@ const officers = [
     
         <div className="col-md-6">
           <p>Recipient Signature <br></br>
-          <input
-            className="form-control"
-            placeholder="Type your full name"
-            required
-            value={form.signature}
-            onChange={(e) =>
-              updateForm("signature", e.target.value)
-            }
-          />
+          <div style={{ border: '1px solid #ccc', borderRadius: '4px' }}>
+            <SignatureCanvas
+              ref={sigCanvas}
+              canvasProps={{
+                width: 400,
+                height: 200,
+                className: 'sigCanvas'
+              }}
+              backgroundColor="white"
+            />
+          </div>
+          <small className="text-muted">Please sign above using your mouse or touch device</small>
+          <br />
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary mt-1"
+            onClick={() => sigCanvas.current && sigCanvas.current.clear()}
+          >
+            Clear Signature
+          </button>
           </p>
 
           <p>Date of Signature<br></br>

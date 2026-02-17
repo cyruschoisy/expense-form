@@ -112,7 +112,14 @@ export default async function handler(req, res) {
   y += 20;
 
   // Signature
-  if (submission.signature) {
+  if (submission.signature && submission.signature.startsWith('data:image/')) {
+    // Extract base64 data from data URL
+    const base64Data = submission.signature.split(',')[1];
+    // Add signature image
+    doc.addImage(base64Data, 'PNG', 20, y, 80, 40); // Adjust size as needed
+    y += 50;
+  } else if (submission.signature) {
+    // Fallback for text signatures
     doc.text(`Signature: ${submission.signature}`, 20, y);
     y += 10;
   }
