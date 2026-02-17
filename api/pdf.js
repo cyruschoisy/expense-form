@@ -157,6 +157,16 @@ export default async function handler(req, res) {
             }
             const imgX = (pageWidth - imgWidth) / 2;
             doc.addImage(`data:image/${receipt.type.split('/')[1] || 'png'};base64,${imageBase64}`, receipt.type.split('/')[1].toUpperCase() || 'PNG', imgX, y, imgWidth, imgHeight);
+            y += imgHeight + 10; // Move y below the image
+
+            // Add notes if available
+            if (item.notes && item.notes.trim()) {
+              doc.setFont('times', 'normal');
+              doc.setFontSize(12);
+              const notesLines = doc.splitTextToSize(`Notes: ${item.notes}`, maxWidth);
+              doc.text(notesLines, margin, y);
+              y += notesLines.length * 5 + 10; // Adjust y for notes height
+            }
           }
         } catch (err) {
           console.error('Failed to load receipt image:', err);

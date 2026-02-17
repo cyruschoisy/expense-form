@@ -87,7 +87,7 @@ export default async function handler(req, res) {
               </div>
               <div class="row">
                 <div class="col-md-6">
-                  <h6>Basic Information</h6>
+                  <h3>Basic Information</h3>
                   <p><strong>Name:</strong> ${s.name || 'N/A'}</p>
                   <p><strong>Email:</strong> ${s.email || 'N/A'}</p>
                   <p><strong>Phone:</strong> ${formatPhone(s.phone)}</p>
@@ -98,7 +98,7 @@ export default async function handler(req, res) {
                   <p><strong>Submitted:</strong> ${s.timestamp ? new Date(s.timestamp).toLocaleString('en-US', { timeZone: 'America/Toronto' }) + ' Toronto' : 'N/A'}</p>
                 </div>
                 <div class="col-md-6">
-                  <h6>Expense Items</h6>
+                  <h3>Expense Items</h3>
                   ${s.items && Array.isArray(s.items) && s.items.length > 0 ? s.items.filter(item => item && typeof item === 'object').map(item => `
                     <div class="mb-2 p-2 border rounded">
                       <p class="mb-1"><strong>Description:</strong> ${item.description || 'N/A'}</p>
@@ -106,6 +106,7 @@ export default async function handler(req, res) {
                       <p class="mb-1"><strong>Budget Line:</strong> ${item.budgetLine || 'N/A'}</p>
                       <p class="mb-1"><strong>Amount:</strong> $${parseFloat(item.amount || 0).toFixed(2)}</p>
                       <p class="mb-0"><strong>Receipts:</strong> ${(item.receipts || []).map(r => `<a class="badge text-bg-secondary text-decoration-none me-1" target="_blank" href="${r.url}">${r.originalName}</a>`).join(' ') || '<span class="text-muted">None</span>'}</p>
+                      ${item.notes ? `<p class="mb-0 mt-2"><strong>Notes:</strong> ${item.notes}</p>` : ''}
                     </div>
                   `).join('') : '<p class="text-muted">No items</p>'}
                 </div>
