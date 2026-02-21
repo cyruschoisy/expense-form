@@ -347,7 +347,7 @@ app.post('/submit', (req, res) => {
     writeSubmissions(submissions);
 
     // Send email notifications
-    const { sendEmail } = await import('./api/_utils.js');
+    const utils = await import('./api/_utils.js');
     const totalAmount = req.body.total || (req.body.items ?
       req.body.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0) : 0);
 
@@ -381,13 +381,13 @@ app.post('/submit', (req, res) => {
     `;
 
     // Send emails asynchronously (don't wait for them to complete)
-    sendEmail(req.body.email, 'Expense Report Submitted - Confirmation', submitterEmailHtml)
+    utils.sendEmail(req.body.email, 'Expense Report Submitted - Confirmation', submitterEmailHtml)
       .catch(err => console.error('Failed to send submitter email:', err));
 
-    sendEmail('vpfa@uottawaess.ca', 'New Expense Report Submitted', adminEmailHtml)
+    utils.sendEmail('vpfa@uottawaess.ca', 'New Expense Report Submitted - Review Required', adminEmailHtml)
       .catch(err => console.error('Failed to send VPFA email:', err));
 
-    sendEmail('financecomm@uottawaess.ca', 'New Expense Report Submitted', adminEmailHtml)
+    utils.sendEmail('financecomm@uottawaess.ca', 'New Expense Report Submitted - Review Required', adminEmailHtml)
       .catch(err => console.error('Failed to send Finance Committee email:', err));
 
     res.status(200).json({ success: true });
