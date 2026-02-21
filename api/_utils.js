@@ -360,6 +360,18 @@ export async function sendEmail(to, subject, html) {
     console.log('SMTP_PASS:', process.env.SMTP_PASS ? '***SET***' : 'NOT SET');
     console.log('SMTP_FROM:', process.env.SMTP_FROM);
 
+    // Check if we're trying to send from a non-Gmail address using Gmail SMTP
+    const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER;
+    const isGmailSmtp = (process.env.SMTP_HOST || 'smtp.gmail.com').includes('gmail.com');
+    const isFromGmail = fromAddress && fromAddress.includes('@gmail.com');
+
+    if (isGmailSmtp && !isFromGmail) {
+      console.error('ERROR: Cannot send from non-Gmail address using Gmail SMTP');
+      console.error('SMTP_FROM:', fromAddress, 'is not a Gmail address');
+      console.error('Either use a Gmail address for SMTP_FROM or switch to a different SMTP provider');
+      return false;
+    }
+
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT) || 587,
@@ -373,7 +385,7 @@ export async function sendEmail(to, subject, html) {
     });
 
     const mailOptions = {
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      from: fromAddress,
       to: to,
       subject: subject,
       html: html
