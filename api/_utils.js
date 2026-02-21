@@ -381,6 +381,10 @@ export async function sendEmail(to, subject, html) {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
       },
+      // Add connection timeout and better error handling
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
       debug: true,
       logger: true
     });
@@ -393,6 +397,15 @@ export async function sendEmail(to, subject, html) {
     };
 
     console.log('Mail options:', { from: mailOptions.from, to: mailOptions.to, subject: mailOptions.subject });
+
+    // Test the connection first
+    try {
+      await transporter.verify();
+      console.log('SMTP connection verified successfully');
+    } catch (verifyError) {
+      console.error('SMTP verification failed:', verifyError.message);
+      return false;
+    }
 
     const info = await transporter.sendMail(mailOptions);
     console.log('Email sent successfully:', info.messageId);
