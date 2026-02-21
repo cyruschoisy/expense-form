@@ -312,7 +312,7 @@ app.get('/admin', requireAuth, (req, res) => {
    API ROUTES (IMPORTANT ORDER)
 ========================= */
 
-app.post('/submit', (req, res) => {
+app.post('/submit', async (req, res) => {
   try {
     const submissions = readSubmissions();
     const submissionId = Date.now().toString();
