@@ -353,6 +353,13 @@ export async function loadSubmissionById(id) {
 
 export async function sendEmail(to, subject, html) {
   try {
+    console.log('Attempting to send email to:', to);
+    console.log('SMTP_HOST:', process.env.SMTP_HOST);
+    console.log('SMTP_PORT:', process.env.SMTP_PORT);
+    console.log('SMTP_USER:', process.env.SMTP_USER ? '***' + process.env.SMTP_USER.slice(-10) : 'NOT SET');
+    console.log('SMTP_PASS:', process.env.SMTP_PASS ? '***SET***' : 'NOT SET');
+    console.log('SMTP_FROM:', process.env.SMTP_FROM);
+
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT) || 587,
@@ -360,7 +367,9 @@ export async function sendEmail(to, subject, html) {
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
-      }
+      },
+      debug: true,
+      logger: true
     });
 
     const mailOptions = {
@@ -370,11 +379,15 @@ export async function sendEmail(to, subject, html) {
       html: html
     };
 
+    console.log('Mail options:', { from: mailOptions.from, to: mailOptions.to, subject: mailOptions.subject });
+
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent:', info.messageId);
+    console.log('Email sent successfully:', info.messageId);
     return true;
   } catch (error) {
     console.error('Email send error:', error);
+    console.error('Error code:', error.code);
+    console.error('Error response:', error.response);
     return false;
   }
 }
