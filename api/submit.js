@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { put } from '@vercel/blob';
-import { saveSubmission, parseJsonBody } from './_utils.js';
+import { saveSubmission, parseJsonBody, sendEmail } from './_utils.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -70,6 +70,48 @@ export default async function handler(req, res) {
     };
 
     await saveSubmission(payload);
+
+    // Send email notifications
+    const totalAmount = itemsWithReceipts.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+
+    // Email to submitter
+    const submitterEmailHtml = `
+      <h2>Expense Report Submitted Successfully</h2>
+      <p>Dear ${body.name},</p>
+      <p>Your expense report has been submitted successfully and will be reviewed by the ESS Finance Department.</p>
+      <p><strong>Submission Details:</strong></p>
+      <ul>
+        <li><strong>Total Amount:</strong> $${totalAmount.toFixed(2)}</li>
+        <li><strong>Submission Date:</strong> ${new Date().toLocaleDateString()}</li>
+        <li><strong>Invoice Date:</strong> ${body.date || 'N/A'}</li>
+      </ul>
+      <p>You will receive a confirmation email once your expense report has been reviewed and approved.</p>
+      <p>If you have any questions, please contact vpfa@uottawaess.ca</p>
+      <p>Thank you for your service to ESS.</p>
+    `;
+
+    // Email to VPFA and Finance Committee
+    const adminEmailHtml = `
+      <h2>New Expense Report Submitted</h2>
+      <p>A new expense report has been submitted and requires review:</p>
+      <p><strong>Submitter:</strong> ${body.name}</p>
+      <p><strong>Email:</strong> ${body.email}</p>
+      <p><strong>Phone:</strong> ${body.phone || 'N/A'}</p>
+      <p><strong>Total Amount:</strong> $${totalAmount.toFixed(2)}</p>
+      <p><strong>Submission Date:</strong> ${new Date().toLocaleDateString()}</p>
+      <p><strong>Invoice Date:</strong> ${body.date || 'N/A'}</p>
+      <p><strong>Budget:</strong> ${body.officers || 'N/A'}</p>
+    `;
+
+    // Send emails asynchronously (don't wait for them to complete)
+    sendEmail(body.email, 'Expense Report Submitted - Confirmation', submitterEmailHtml)
+      .catch(err => console.error('Failed to send submitter email:', err));
+
+    sendEmail('vpfa@uottawaess.ca', 'New Expense Report Submitted - Review Required', adminEmailHtml)
+      .catch(err => console.error('Failed to send VPFA email:', err));
+
+    sendEmail('financecomm@uottawaess.ca', 'New Expense Report Submitted - Review Required', adminEmailHtml)
+      .catch(err => console.error('Failed to send Finance Committee email:', err));
 
     res.setHeader('Content-Type', 'application/json');
     res.statusCode = 200;
