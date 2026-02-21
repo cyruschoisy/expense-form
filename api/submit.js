@@ -103,15 +103,22 @@ export default async function handler(req, res) {
       <p><strong>Budget:</strong> ${body.officers || 'N/A'}</p>
     `;
 
-    // Send emails asynchronously (don't wait for them to complete)
-    sendEmail(body.email, 'Expense Report Submitted - Confirmation', submitterEmailHtml)
-      .catch(err => console.error('Failed to send submitter email:', err));
+    // Send emails and wait for them to complete
+    const emailPromises = [
+      sendEmail(body.email, 'Expense Report Submitted - Confirmation', submitterEmailHtml),
+      sendEmail('vpfa@uottawaess.ca', 'New Expense Report Submitted - Review Required', adminEmailHtml),
+      sendEmail('financecomm@uottawaess.ca', 'New Expense Report Submitted - Review Required', adminEmailHtml)
+    ];
 
-    sendEmail('vpfa@uottawaess.ca', 'New Expense Report Submitted - Review Required', adminEmailHtml)
-      .catch(err => console.error('Failed to send VPFA email:', err));
-
-    sendEmail('financecomm@uottawaess.ca', 'New Expense Report Submitted - Review Required', adminEmailHtml)
-      .catch(err => console.error('Failed to send Finance Committee email:', err));
+    // Wait for all emails to complete
+    const emailResults = await Promise.allSettled(emailPromises);
+    
+    // Check if any emails failed
+    const failedEmails = emailResults.filter(result => result.status === 'rejected');
+    if (failedEmails.length > 0) {
+      console.error('Some emails failed to send:', failedEmails);
+      // Still return success for the form submission, but log the email failures
+    }
 
     res.setHeader('Content-Type', 'application/json');
     res.statusCode = 200;
