@@ -85,9 +85,9 @@ export default async function handler(req, res) {
         <li><strong>Submission Date:</strong> ${new Date().toLocaleDateString()}</li>
         <li><strong>Invoice Date:</strong> ${body.date || 'N/A'}</li>
       </ul>
-      <p>You will receive a confirmation email once your expense report has been reviewed and approved.</p>
+      <p>You will receive confirmation once your expense report has been reviewed and approved.</p>
       <p>If you have any questions, please contact vpfa@uottawaess.ca</p>
-      <p>Thank you for your service to ESS.</p>
+      <p>Thank you for your service to the Engineering Students Society.</p>
     `;
 
     // Email to VPFA and Finance Committee
