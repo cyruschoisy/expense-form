@@ -29,14 +29,10 @@ export default async function handler(req, res) {
             const buffer = Buffer.from(base64, 'base64');
             const filename = `${submissionId}_${i}_${j}_${r.name || 'receipt'}`;
             
-            console.log(`Uploading receipt ${j} for item ${i}: ${filename}, size: ${buffer.length} bytes`);
-            
             const blob = await put(filename, buffer, {
               access: 'public',
               contentType: r.type || 'application/octet-stream'
             });
-            
-            console.log(`Successfully uploaded: ${blob.url}`);
             
             uploaded.push({
               originalName: r.name,
@@ -105,9 +101,8 @@ export default async function handler(req, res) {
 
     // Send emails and wait for them to complete
     const emailPromises = [
-      sendEmail(body.email, 'Expense Report Submitted - Confirmation', submitterEmailHtml),
-      sendEmail('vpfa@uottawaess.ca', 'New Expense Report Submitted - Review Required', adminEmailHtml),
-      sendEmail('financecomm@uottawaess.ca', 'New Expense Report Submitted - Review Required', adminEmailHtml)
+      sendEmail(body.email, 'Expense Report Confirmation', submitterEmailHtml),
+      sendEmail('vpfa@uottawaess.ca', 'New Expense Report', adminEmailHtml, 'financecomm@uottawaess.ca')
     ];
 
     // Wait for all emails to complete

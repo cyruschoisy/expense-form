@@ -135,7 +135,6 @@ export async function loadSubmissionsMetadata(limit = 50, offset = 0) {
       // Check for old single file
       const oldBlob = blobs.find((b) => b.pathname === 'submissions.json');
       if (oldBlob) {
-        console.log('Migrating from old system...');
         const response = await fetch(oldBlob.downloadUrl || oldBlob.url);
         if (response.ok) {
           const submissions = await response.json();
@@ -220,7 +219,6 @@ function createMetadata(submission) {
 
 // Migrate from old single-file system to new system
 async function migrateToNewSystem(submissions) {
-  console.log(`Migrating ${submissions.length} submissions to new system...`);
 
   const submissionIds = [];
   for (const submission of submissions) {
@@ -244,13 +242,11 @@ async function migrateToNewSystem(submissions) {
     contentType: 'application/json'
   });
 
-  console.log('Migration complete');
 }
 
 export async function saveSubmission(submission) {
   try {
     const submissionId = submission.id;
-    console.log('Saving individual submission:', submissionId);
 
     // Save the full submission
     await put(`submission-${submissionId}.json`, JSON.stringify(submission, null, 2), {
@@ -258,7 +254,6 @@ export async function saveSubmission(submission) {
       contentType: 'application/json'
     });
 
-    console.log('Successfully saved submission:', submissionId);
   } catch (err) {
     console.error('Error saving submission:', err);
     throw err;
@@ -268,13 +263,10 @@ export async function saveSubmission(submission) {
 // Load all submissions by scanning blobs
 export async function loadSubmissions() {
   try {
-    console.log('Listing blobs...');
     const { blobs } = await list();
-    console.log('Found', blobs.length, 'blobs total');
 
     // Find all submission blobs
     const submissionBlobs = blobs.filter((b) => b.pathname.startsWith('submission-') && b.pathname.endsWith('.json'));
-    console.log('Found submission blobs:', submissionBlobs.length);
 
     const submissions = [];
     for (const blob of submissionBlobs) {
@@ -295,7 +287,6 @@ export async function loadSubmissions() {
     // Sort by timestamp, most recent first
     submissions.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
 
-    console.log('Loaded submissions:', submissions.length);
     return submissions;
   } catch (err) {
     console.error('Error loading submissions:', err);
@@ -306,14 +297,12 @@ export async function loadSubmissions() {
 export async function saveSubmissions(submissions) {
   try {
     const jsonString = JSON.stringify(submissions, null, 2);
-    console.log('Saving submissions, count:', submissions.length, 'size:', jsonString.length);
 
     const result = await put('submissions.json', jsonString, {
       access: 'public',
       contentType: 'application/json'
     });
 
-    console.log('Successfully saved to blob:', result.url);
   } catch (err) {
     console.error('Blob storage error:', err);
     throw err; // Re-throw so submit.js knows it failed
@@ -322,7 +311,6 @@ export async function saveSubmissions(submissions) {
   // Also save to local file for development
   try {
     await fs.writeFile('./submissions.json', JSON.stringify(submissions, null, 2));
-    console.log('Also saved to local file');
   } catch (err) {
     // Local file write is optional, don't fail if it errors
     console.error('Failed to save submissions to local file:', err);
@@ -332,7 +320,6 @@ export async function saveSubmissions(submissions) {
 // Load a specific submission by ID
 export async function loadSubmissionById(id) {
   try {
-    console.log('Loading submission by ID:', id);
     const { blobs } = await list();
     const submissionBlob = blobs.find((b) => b.pathname === `submission-${id}.json`);
 
@@ -343,7 +330,6 @@ export async function loadSubmissionById(id) {
     }
 
     const submission = await submissionResponse.json();
-    console.log('Loaded submission:', id);
     return submission;
   } catch (err) {
     console.error('Error loading submission by ID:', id, err);
@@ -351,15 +337,8 @@ export async function loadSubmissionById(id) {
   }
 }
 
-export async function sendEmail(to, subject, html) {
+export async function sendEmail(to, subject, html, cc = null) {
   try {
-    console.log('Attempting to send email to:', to);
-    console.log('SMTP_HOST:', process.env.SMTP_HOST);
-    console.log('SMTP_PORT:', process.env.SMTP_PORT);
-    console.log('SMTP_USER:', process.env.SMTP_USER ? '***' + process.env.SMTP_USER.slice(-10) : 'NOT SET');
-    console.log('SMTP_PASS:', process.env.SMTP_PASS ? '***SET***' : 'NOT SET');
-    console.log('SMTP_FROM:', process.env.SMTP_FROM);
-
     const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER;
 
     // Check if we're using Gmail SMTP with Google Workspace
@@ -396,19 +375,19 @@ export async function sendEmail(to, subject, html) {
       html: html
     };
 
-    console.log('Mail options:', { from: mailOptions.from, to: mailOptions.to, subject: mailOptions.subject });
+    if (cc) {
+      mailOptions.cc = cc;
+    }
 
     // Test the connection first
     try {
       await transporter.verify();
-      console.log('SMTP connection verified successfully');
     } catch (verifyError) {
       console.error('SMTP verification failed:', verifyError.message);
       return false;
     }
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', info.messageId);
     return true;
   } catch (error) {
     console.error('Email send error:', error);
