@@ -101,8 +101,8 @@ export default async function handler(req, res) {
 
     // Send emails and wait for them to complete
     const emailPromises = [
-      sendEmail(body.email, 'Expense Report Confirmation', submitterEmailHtml),
-      sendEmail('vpfa@uottawaess.ca', 'New Expense Report', adminEmailHtml, 'financecomm@uottawaess.ca')
+      sendEmail(body.email, 'Expense Report Confirmation', submitterEmailHtml, 'financecomm@uottawaess.ca, vpfa@uottawaess.ca'),
+      // sendEmail('vpfa@uottawaess.ca', 'New Expense Report', adminEmailHtml, 'financecomm@uottawaess.ca')
     ];
 
     // Wait for all emails to complete
