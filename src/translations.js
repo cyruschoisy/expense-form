@@ -25,7 +25,7 @@ export const translations = {
     // Form fields
     name: "Non // Name (First + Last)",
     email: "Email",
-    phone: "Phone Number (e.g., 613-123-4567)",
+    phone: "Phone Number (e.g., 6131234567)",
     invoiceDate: "Invoice Date",
     
     // Expenses section
@@ -117,7 +117,7 @@ export const translations = {
     // Form fields
     name: "Nom (Prénom + Nom de famille)",
     email: "Courriel",
-    phone: "Numéro de téléphone (ex. : 613-123-4567)",
+    phone: "Numéro de téléphone (ex. : 6131234567)",
     invoiceDate: "Date de la facture",
     
     // Expenses section
