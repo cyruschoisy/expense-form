@@ -1,8 +1,10 @@
 import { useState, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import SignatureCanvas from 'react-signature-canvas';
+import { useLanguage } from './LanguageContext';
 
 export default function ExpenseReportForm() {
+  const { language, toggleLanguage, t } = useLanguage();
   const today = new Date().toLocaleDateString('en-CA');
   const sigCanvas = useRef(null);
   const [form, setForm] = useState({
@@ -110,7 +112,7 @@ export default function ExpenseReportForm() {
     try {
       // Validate signature
       if (!sigCanvas.current || sigCanvas.current.isEmpty()) {
-        alert('Please provide your signature before submitting.');
+        alert(t('signatureRequired'));
         setIsSubmitting(false);
         return;
       }
@@ -178,61 +180,68 @@ export default function ExpenseReportForm() {
       }
     } catch (error) {
       console.error('Submission error:', error);
-      alert('Failed to submit expense report. Please try again.');
+      alert(t('submissionFailed'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
 const officers = [
-  "President",
-  "VP Finance & Administration",
-  "VP External",
-  "VP Internal",
-  "VP Academic",
-  "VP Services",
-  "VP Communications",
-  "VP Social",
-  "VP Philanthropic",
-  "VP Equity",
-  "VP Sustainability",
-  "VP Francophone",
-  "Other"
+  { key: "president", label: t('president') },
+  { key: "vpFinance", label: t('vpFinance') },
+  { key: "vpExternal", label: t('vpExternal') },
+  { key: "vpInternal", label: t('vpInternal') },
+  { key: "vpAcademic", label: t('vpAcademic') },
+  { key: "vpServices", label: t('vpServices') },
+  { key: "vpCommunications", label: t('vpCommunications') },
+  { key: "vpSocial", label: t('vpSocial') },
+  { key: "vpPhilanthropic", label: t('vpPhilanthropic') },
+  { key: "vpEquity", label: t('vpEquity') },
+  { key: "vpSustainability", label: t('vpSustainability') },
+  { key: "vpFrancophone", label: t('vpFrancophone') },
+  { key: "other", label: t('other') }
 ];
 
 
   return (
     <div className="container p-5">
-      <div className="text-end mb-3">
-        <a href="/login" className="btn btn-outline-secondary">Admin Login</a>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <button 
+          onClick={toggleLanguage} 
+          className="btn btn-outline-primary"
+          style={{ minWidth: '80px' }}
+        >
+          {language === 'en' ? '🇫🇷 FR' : '🇬🇧 EN'}
+        </button>
+        <a href="/login" className="btn btn-outline-secondary">{t('adminLogin')}</a>
       </div>
       <div className="container-fluid text-center mb-3">
         <img src="/ess-banner.png" alt="ESS Logo" className="mb-3 w-50"></img>
-        <h1><strong>Reimbursement Form</strong></h1>
+        <h1><strong>{t('reimbursementForm')}</strong></h1>
       </div>
 
-      <p>To ensure a smooth and efficient process for handling reimbursements at the University of Ottawa's Engineering Student Society (ESS), we have established this Reimbursement Form.</p>
+      <p>{t('intro1')}</p>
 
-      <p>This form has been designed to facilitate the submission and review of expenses incurred while conducting official business on behalf of ESS. We value your dedication and commitment to our mission, and we want to make sure you are promptly and fairly reimbursed for any authorized expenses you may have incurred.</p>
+      <p>{t('intro2')}</p>
 
-      <p>Before proceeding with your reimbursement request, please take a moment to carefully read and complete this form in its entirety. Ensure that you provide all necessary details, including accurate expense descriptions, dates, and supporting documentation, to expedite the reimbursement process.</p>
+      <p>{t('intro3')}</p>
 
-      <p>Our goal is to process your reimbursement request as efficiently as possible, and your cooperation in submitting complete and accurate information will greatly assist in achieving this objective. Please keep in mind the following important guidelines:</p>
+      <p>{t('intro4')}</p>
 
       <ul>
-        <li>Expense Eligibility: Only expenses that have been approved are eligible for reimbursement. Be sure to reference our budget to see approved expenses.</li>
-        <li>Timely Submission: All reimbursement requests must be submitted within two weeks of incurring the expense. Late submissions may result in delays in processing.</li>
-        <li>Required Documentation: You are required to provide clear and itemized receipts or supporting documentation for each expense claimed. Without proper documentation, your request may be delayed or denied.</li>
-        <li>Approval Process: Once your reimbursement request is submitted, it will undergo a review and approval process. You will be notified of the status of your request as it progresses.</li>
+        <li>{t('expenseEligibility')}</li>
+        <li>{t('timelySubmission')}</li>
+        <li>{t('requiredDocumentation')}</li>
+        <li>{t('approvalProcess')}</li>
       </ul>
 
-      <p><strong>Payment Method:</strong> <i>Direct Deposit (preferred) // E-transfer</i></p>
-      <p className="pb-3">We appreciate your dedication to ESS and your commitment to maintaining the highest standards of financial responsibility. If you have any questions or require assistance while completing this form, please do not hesitate to email <a href="mailto:vpfa@uottawaess.ca">vpfa@uottawaess.ca</a>.</p>
+      <p><strong>{t('paymentMethod')}</strong> <i>{t('paymentMethodDetails')}</i></p>
+      <p className="pb-3">{t('closingNote')} <a href="mailto:vpfa@uottawaess.ca">vpfa@uottawaess.ca</a>.</p>
 
       <hr className="pb-3"></hr>
 
       <form onSubmit={submit}>
-        <p className="">Non // Name (First + Last)<br></br>
+        <p className="">{t('name')}<br></br>
         <input
           className="form-control"
           required
@@ -241,7 +250,7 @@ const officers = [
         />
         </p>
         
-        <p>Email<br></br>
+        <p>{t('email')}<br></br>
         <input
           className="form-control"
           type="email"
@@ -251,7 +260,7 @@ const officers = [
         />
         </p>
 
-        <p>Phone Number (e.g., 613-123-4567)<br></br>
+        <p>{t('phone')}<br></br>
         <input
           className="form-control"
           type="tel"
@@ -262,7 +271,7 @@ const officers = [
         />
         </p>
 
-        <p>Invoice Date <br></br>
+        <p>{t('invoiceDate')} <br></br>
           <input
             className="form-control"
             type="date"
@@ -273,14 +282,14 @@ const officers = [
           />
         </p>
 
-        <h3 className="pt-5">Expenses</h3>
+        <h3 className="pt-5">{t('expenses')}</h3>
 
         {items.map((item, i) => (
           <div className="border rounded p-3 mb-3" key={i}>
-            <p><strong>Expense #{i + 1}</strong></p>
+            <p><strong>{t('expense')} #{i + 1}</strong></p>
             <div className="row g-2">
               <div className="col-md-4">
-                Description <br></br>
+                {t('description')} <br></br>
                 <input
                   className="form-control"
                   required
@@ -292,7 +301,7 @@ const officers = [
               </div>
 
               <div className="col-md-2">
-                Budget <br></br>
+                {t('budget')} <br></br>
                 <select
                   className="form-control"
                   required
@@ -301,17 +310,17 @@ const officers = [
                     updateItem(i, "officers", e.target.value)
                   }
                 >
-                  <option value="">Select</option>
+                  <option value="">{t('select')}</option>
                   {officers.map((officer) => (
-                    <option key={officer} value={officer}>
-                      {officer}
+                    <option key={officer.key} value={officer.label}>
+                      {officer.label}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="col-md-2">
-                Budget Line <br></br>
+                {t('budgetLine')} <br></br>
                 <input
                   className="form-control"
                   required
@@ -323,7 +332,7 @@ const officers = [
               </div>
 
               <div className="col-md-2">
-                Amount <br></br>
+                {t('amount')} <br></br>
                 <input
                   step="0.01"
                   className="form-control"
@@ -339,7 +348,7 @@ const officers = [
               </div>
 
               <div className="col-md-2">
-                Receipt <br></br>
+                {t('receipt')} <br></br>
                 <input
                   type="file"
                   className="form-control"
@@ -352,7 +361,7 @@ const officers = [
 
             <div className="row g-2 mt-2">
               <div className="col-12">
-                Notes (if applicable)<br></br>
+                {t('notes')}<br></br>
                 <input
                   className="form-control"
                   placeholder=""
@@ -366,7 +375,7 @@ const officers = [
 
             {item.receipts.length > 0 && (
               <small className="text-muted">
-                Receipt attached
+                {t('receiptAttached')}
               </small>
             )}
             {i > 0 && (
@@ -385,15 +394,15 @@ const officers = [
 
 
         <a className="btn btn-dark my-2" type="button" onClick={addItem}>
-          + Add Expense
+          {t('addExpense')}
         </a>
 
         <div className="py-5 text-center border my-3">
-          <h3 className="">Total: ${total.toFixed(2)}</h3>
+          <h3 className="">{t('total')}: ${total.toFixed(2)}</h3>
         </div>
     
         <div className="col-12 col-md-6">
-          <p>Recipient Signature <br></br>
+          <p>{t('recipientSignature')} <br></br>
           <div style={{ border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}>
             <SignatureCanvas
               ref={sigCanvas}
@@ -404,18 +413,18 @@ const officers = [
               backgroundColor="white"
             />
           </div>
-          <small className="text-muted">Please sign above using your mouse or touch device</small>
+          <small className="text-muted">{t('signatureInstruction')}</small>
           <br />
           <button
             type="button"
             className="btn btn-sm btn-outline-secondary mt-1"
             onClick={() => sigCanvas.current && sigCanvas.current.clear()}
           >
-            Clear Signature
+            {t('clearSignature')}
           </button>
           </p>
 
-          <p>Date of Signature<br></br>
+          <p>{t('dateOfSignature')}<br></br>
             <input
               className="form-control"
               type="date"
@@ -437,7 +446,7 @@ const officers = [
               required
             />
             <label className="form-check-label" htmlFor="budgetConfirm" style={{ marginBottom: 0 }}>
-              <strong>Please confirm the nature of the expense below:</strong> <br></br>Yes, this expense has been budgeted for and is within the budgeted limits according to the latest edition of the 2025-26 budget that has been approved by the Exec Team/BOD.
+              <strong>{t('budgetConfirmTitle')}</strong> <br></br>{t('budgetConfirmText')}
             </label>
           </div>
         </div>
@@ -453,7 +462,7 @@ const officers = [
               required
             />
             <label className="form-check-label" htmlFor="truthConfirm" style={{ marginBottom: 0 }}>
-              <strong>Declaration of Truth:</strong> <br></br>I hereby affirm that the information provided in this submission is true, complete, and accurate to the best of my knowledge.
+              <strong>{t('truthTitle')}</strong> <br></br>{t('truthText')}
             </label>
           </div>
         </div>
@@ -463,10 +472,10 @@ const officers = [
             {isSubmitting ? (
               <>
                 <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Compressing & Submitting...
+                {t('submitting')}
               </>
             ) : (
-              'Submit Expense Report'
+              t('submitButton')
             )}
           </button>
         </div>
