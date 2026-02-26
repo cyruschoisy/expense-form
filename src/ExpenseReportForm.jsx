@@ -392,15 +392,14 @@ const officers = [
           <h3 className="">Total: ${total.toFixed(2)}</h3>
         </div>
     
-        <div className="col-md-6">
+        <div className="col-12 col-md-6">
           <p>Recipient Signature <br></br>
-          <div style={{ border: '1px solid #ccc', borderRadius: '4px' }}>
+          <div style={{ border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}>
             <SignatureCanvas
               ref={sigCanvas}
               canvasProps={{
-                width: 400,
                 height: 200,
-                className: 'sigCanvas'
+                className: 'sigCanvas w-100'
               }}
               backgroundColor="white"
             />
